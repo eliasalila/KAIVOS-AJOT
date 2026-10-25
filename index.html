@@ -117,6 +117,14 @@ input:focus{outline:3px solid var(--hi);border-color:var(--ink)}
     <button id="syncNow">Lähetä nyt</button>
   </div>
   <p class="note" id="cfgMsg"></p>
+
+  <div class="lbl">Asetuslinkki muille laitteille</div>
+  <p class="note">Tallenna asetukset ensin tälle laitteelle. Paina sitten alla olevaa nappia, kopioi linkki ja lähetä se muille laitteille. Linkin avaaminen ottaa osoitteen ja salasanan käyttöön.</p>
+  <div class="tools">
+    <button id="mkLink">Luo asetuslinkki</button>
+  </div>
+  <input type="text" id="cfgLink" readonly class="hide" autocomplete="off" spellcheck="false">
+  <p class="note">Linkki sisältää salasanan. Lähetä se vain henkilöille, jotka saavat käyttää sovellusta.</p>
 </section>
 </main>
 
@@ -426,6 +434,34 @@ $("cfgTest").onclick=async()=>{
   catch(e){$("cfgMsg").textContent="✗ "+((e.name==="AbortError"||e instanceof TypeError)?"Ei yhteyttä palvelimeen tai osoite on väärä.":e.message)}
 };
 $("syncNow").onclick=()=>sync(true);
+
+// ---------- Asetuslinkki (palvelin + salasana yhdellä linkillä) ----------
+function b64enc(s){return btoa(unescape(encodeURIComponent(s))).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"")}
+function b64dec(s){s=s.replace(/-/g,"+").replace(/_/g,"/");while(s.length%4)s+="=";return decodeURIComponent(escape(atob(s)))}
+$("mkLink").onclick=async()=>{
+  const c=cfg();
+  if(!c.url){$("cfgMsg").textContent="Tallenna ensin palvelimen osoite ja salasana.";return}
+  const link=location.origin+location.pathname+"#asetukset="+b64enc(JSON.stringify({url:c.url,token:c.token||""}));
+  const box=$("cfgLink");box.value=link;box.classList.remove("hide");box.focus();box.select();
+  try{await navigator.clipboard.writeText(link);$("cfgMsg").textContent="Linkki kopioitu leikepöydälle."}
+  catch(e){$("cfgMsg").textContent="Kopioi linkki yllä olevasta kentästä (paina pitkään → Kopioi)."}
+};
+function importCfgFromHash(){
+  const m=location.hash.match(/^#asetukset=([A-Za-z0-9_-]+)$/);
+  if(!m)return;
+  try{
+    const o=JSON.parse(b64dec(m[1]));
+    if(typeof o.url==="string"&&/^https:\/\//.test(o.url)){
+      let host="";try{host=new URL(o.url).host}catch(e){}
+      // Varmistus: tuntematon linkki voisi muuten ohjata kirjaukset väärälle palvelimelle
+      if(host&&confirm("Otetaanko käyttöön palvelin "+host+"?\n\nVahvista vain, jos sait linkin työnjohtajalta.")){
+        localStorage.setItem(CFGKEY,JSON.stringify({url:o.url,token:String(o.token||"")}));
+        toast("Asetukset otettu käyttöön");
+      }
+    }
+  }catch(e){}
+  history.replaceState(null,"",location.pathname+location.search); // poistaa salasanan osoiteriviltä
+}
 window.addEventListener("online",()=>sync());
 document.addEventListener("visibilitychange",()=>{if(!document.hidden)sync()});
 setInterval(()=>sync(),60000);
@@ -437,6 +473,7 @@ if("serviceWorker" in navigator&&location.protocol.startsWith("http")){
 }
 
 // ---------- Käynnistys ----------
+importCfgFromHash();
 prefill();
 chips($("dests"),DESTS,"dest",onDest);
 chips($("grades"),GRADES,"grade");
