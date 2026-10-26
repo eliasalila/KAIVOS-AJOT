@@ -3,88 +3,146 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Kaivoksen ajot</title>
+<title>KultaJuna</title>
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#1c1f22">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
+<script>
+// Tumma teema on oletus. Asetetaan ennen sivun piirtämistä, ettei välähdä.
+try{document.documentElement.setAttribute("data-theme",localStorage.getItem("kultajuna_theme")==="light"?"light":"dark")}catch(e){document.documentElement.setAttribute("data-theme","dark")}
+</script>
 <style>
-:root{--bg:#f4f4f1;--card:#fff;--ink:#1c1f22;--mute:#5d646b;--line:#c9ccc9;--hi:#ffd400;--hi-ink:#1c1f22;--bar:#1c1f22;--err:#b3261e}
-@media(prefers-color-scheme:dark){:root{--bg:#15171a;--card:#1f2327;--ink:#f1f2f0;--mute:#a2a8ae;--line:#3a4046;--bar:#0d0e10;--err:#ff8a80}}
+:root{--bg:#15171a;--card:#1f2327;--ink:#f1f2f0;--mute:#a2a8ae;--line:#3a4046;--hi:#ffd400;--hi-ink:#1c1f22;--bar:#0d0e10;--err:#ff8a80;--okc:#66bb6a}
+:root[data-theme=light]{--bg:#f4f4f1;--card:#fff;--ink:#1c1f22;--mute:#5d646b;--line:#c9ccc9;--bar:#1c1f22;--err:#b3261e;--okc:#2e7d32}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font:18px/1.35 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;padding-bottom:env(safe-area-inset-bottom)}
 header{background:var(--bar);color:#fff;position:sticky;top:0;z-index:5;padding-top:env(safe-area-inset-top)}
 header h1{margin:0;font-size:20px;padding:12px 16px 4px}
 nav{display:flex}
-nav button{flex:1;background:none;border:0;border-bottom:4px solid transparent;color:#cfd3d6;font:inherit;font-weight:600;padding:12px 8px}
+nav button{flex:1;background:none;border:0;border-bottom:4px solid transparent;color:#cfd3d6;font:inherit;font-weight:600;padding:14px 6px;min-height:52px}
 nav button[aria-selected=true]{color:#fff;border-bottom-color:var(--hi)}
 main{padding:16px;max-width:640px;margin:0 auto}
 label,.lbl{display:block;font-size:16px;color:var(--mute);margin:20px 0 6px}
-input[type=text],input[type=number]{width:100%;font:inherit;font-size:22px;padding:14px;border:2px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink)}
-input:focus{outline:3px solid var(--hi);border-color:var(--ink)}
-.chips{display:flex;flex-wrap:wrap;gap:8px}
-.chip{font:inherit;font-size:20px;padding:14px 18px;border:2px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink);min-height:52px}
+input[type=text],input[type=number],input[type=datetime-local],select{width:100%;font:inherit;font-size:22px;padding:14px;border:2px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink);min-height:58px}
+input:focus,select:focus{outline:3px solid var(--hi);border-color:var(--ink)}
+.chips{display:flex;flex-wrap:wrap;gap:10px}
+.chip{font:inherit;font-size:21px;padding:14px 20px;border:2px solid var(--line);border-radius:12px;background:var(--card);color:var(--ink);min-height:60px}
 .chip[aria-pressed=true]{background:var(--hi);color:var(--hi-ink);border-color:var(--ink);font-weight:700}
+.chip.small{font-size:18px;min-height:48px;padding:8px 14px}
 .err{color:var(--err);font-size:16px;margin-top:6px;min-height:0}
-.save{width:100%;margin-top:28px;min-height:68px;font:inherit;font-size:22px;font-weight:700;border:0;border-radius:12px;background:var(--hi);color:var(--hi-ink)}
+.save{width:100%;margin-top:28px;min-height:72px;font:inherit;font-size:22px;font-weight:700;border:0;border-radius:12px;background:var(--hi);color:var(--hi-ink)}
 .save:active{transform:scale(.99)}
-.toast{position:fixed;left:16px;right:16px;bottom:calc(16px + env(safe-area-inset-bottom));background:var(--bar);color:#fff;padding:14px 16px;border-radius:10px;opacity:0;pointer-events:none;transition:opacity .2s;text-align:center;z-index:9}
+.btnbig{width:100%;margin-top:28px;min-height:88px;font:inherit;font-size:28px;font-weight:800;letter-spacing:.5px;border:0;border-radius:14px}
+.btnbig:active{transform:scale(.99)}
+#btnLoad{background:var(--hi);color:#1c1f22}
+#btnUnload{background:#2e7d32;color:#fff}
+.toast{position:fixed;left:16px;right:16px;bottom:calc(16px + env(safe-area-inset-bottom));background:var(--bar);color:#fff;padding:14px 16px;border-radius:10px;opacity:0;pointer-events:none;transition:opacity .2s;text-align:center;z-index:60}
 .toast.on{opacity:1}
 .row{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:10px}
 .row.void{opacity:.5;text-decoration:line-through}
 .row b{font-size:20px}
 .row small{display:block;color:var(--mute);font-size:15px;margin-top:2px}
-.row button{margin-top:8px;font:inherit;font-size:15px;padding:8px 12px;border:1px solid var(--line);border-radius:8px;background:none;color:var(--ink)}
+.row button{margin-top:8px;font:inherit;font-size:16px;padding:10px 14px;border:1px solid var(--line);border-radius:8px;background:none;color:var(--ink);min-height:44px}
 .sum{font-weight:700;margin:0 0 12px}
 .tools{display:flex;gap:8px;margin-bottom:16px}
-.tools button{flex:1;font:inherit;font-size:16px;padding:12px;border:2px solid var(--ink);border-radius:10px;background:none;color:var(--ink);font-weight:600}
-.warn{color:#b26a00}
-#stat{padding:0 16px 8px;font-size:14px;color:#cfd3d6}
-.ok{color:#2e7d32}
+.tools button{flex:1;font:inherit;font-size:16px;padding:12px;border:2px solid var(--ink);border-radius:10px;background:none;color:var(--ink);font-weight:600;min-height:52px}
+.warn{color:#e69a00}
+#stat{padding:2px 16px 8px;font-size:16px;font-weight:600;color:#cfd3d6}
+#stat .dot{display:inline-block;width:11px;height:11px;border-radius:50%;margin-right:7px;background:#e69a00;vertical-align:baseline}
+#stat.on .dot{background:#66bb6a}
+#stat.off .dot{background:#ff6b5e}
+.ok{color:var(--okc)}
 .note{color:var(--mute);font-size:15px;margin:8px 0}
 .banner{border-color:var(--hi);border-width:2px;margin-top:0}
 .row button.edit{border-color:var(--ink);font-weight:600}
 #warnBar{background:var(--hi);color:#1c1f22;padding:10px 16px;font-size:15px;font-weight:700;cursor:pointer}
+#shiftBar{background:#2a2f34;color:#fff;padding:8px 16px;font-size:17px;font-weight:700;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+#shiftBar small{font-weight:400;color:#cfd3d6;font-size:13px}
+#shiftBar .bar{height:26px;width:auto}
 .top{display:flex;align-items:center;justify-content:space-between;padding-right:16px}
 .who{display:flex;gap:8px;align-items:center;font-size:14px;color:#cfd3d6}
-.who button{font:inherit;font-size:14px;padding:6px 10px;border:1px solid #cfd3d6;border-radius:8px;background:none;color:#fff}
+.who button{font:inherit;font-size:14px;padding:8px 12px;border:1px solid #cfd3d6;border-radius:8px;background:none;color:#fff;min-height:40px}
 .overlay{position:fixed;inset:0;background:var(--bg);z-index:30;overflow:auto;padding:16px}
-.overlay .box{max-width:420px;margin:6vh auto 0}
+.overlay .box{max-width:460px;margin:5vh auto 0}
 .overlay h2{margin:0 0 4px;font-size:26px}
-input[type=password]{width:100%;font:inherit;font-size:22px;padding:14px;border:2px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink)}
-.linkbtn{background:none;border:0;color:var(--mute);font:inherit;font-size:15px;text-decoration:underline;padding:12px 0}
-.hide{display:none}
+input[type=password]{width:100%;font:inherit;font-size:22px;padding:14px;border:2px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink);min-height:58px}
+.linkbtn{background:none;border:0;color:var(--mute);font:inherit;font-size:16px;text-decoration:underline;padding:14px 0;min-height:48px}
+.hide{display:none!important}
+.loadcard{background:var(--card);border:2px solid var(--hi);border-radius:12px;padding:14px 16px;margin-bottom:6px}
+.loadcard b{font-size:22px}
+.loadcard .t{font-size:34px;font-weight:800;color:var(--hi);font-variant-numeric:tabular-nums}
+.msgbox{background:var(--card);border:2px solid #66bb6a;border-radius:12px;padding:12px 14px;margin-bottom:14px}
+.msgbox button{float:right;font:inherit;font-size:15px;border:1px solid var(--line);border-radius:8px;background:none;color:var(--ink);padding:6px 10px;min-height:40px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:14px}
+.card h3{margin:0 0 6px;font-size:18px}
+.flash{position:fixed;inset:0;z-index:70;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;color:#fff;padding:24px}
+.flash.ok{background:rgba(46,125,50,.97)}
+.flash.err{background:rgba(179,38,30,.97)}
+.flash.gold{background:rgba(24,20,8,.97)}
+.flash #flashTitle{font-size:34px;font-weight:800;margin-top:18px}
+.flash #flashSub{font-size:22px;margin-top:8px;opacity:.95}
+.flash .bar{width:min(78vw,340px);height:auto;filter:drop-shadow(0 0 18px rgba(255,200,0,.65))}
+.helptxt h3{margin:18px 0 6px;font-size:19px}
+.helptxt ol,.helptxt ul{margin:6px 0;padding-left:22px}
+.helptxt li{margin:4px 0}
+.sumline{font-size:34px;font-weight:800;margin:10px 0}
+#sumBars .bar{height:46px;width:auto}
 </style>
 </head>
 <body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<symbol id="gbar" viewBox="0 0 120 70">
+  <linearGradient id="gf" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffd54a"/><stop offset="1" stop-color="#d99a00"/></linearGradient>
+  <path d="M22 6H98L116 30H4Z" fill="#fff0a8" stroke="#8a5a00" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M4 30H116V64H4Z" fill="url(#gf)" stroke="#8a5a00" stroke-width="3" stroke-linejoin="round"/>
+  <text x="60" y="55" text-anchor="middle" font-size="22" font-weight="800" fill="#8a5a00" font-family="system-ui,sans-serif">Au</text>
+</symbol></defs></svg>
+
 <header>
   <div class="top">
-    <h1>Kaivoksen ajot</h1>
-    <div id="whoBox" class="who hide"><span id="who"></span><button id="logout" type="button">Kirjaudu ulos</button></div>
+    <h1>KultaJuna</h1>
+    <div id="whoBox" class="who hide"><span id="who"></span><button id="helpBtn" type="button">Ohje</button><button id="logout" type="button">Kirjaudu ulos</button></div>
   </div>
   <div id="stat"></div>
+  <div id="shiftBar" class="hide"><span id="shiftTxt"></span><span id="shiftBars"></span></div>
   <div id="warnBar" class="hide" role="alert"></div>
   <nav role="tablist">
-    <button role="tab" id="t-form" aria-selected="true">Uusi ajokerta</button>
+    <button role="tab" id="t-form" aria-selected="true">Kirjaus</button>
     <button role="tab" id="t-list" aria-selected="false">Kirjatut</button>
+    <button role="tab" id="t-admin" aria-selected="false" class="hide">Hallinta</button>
     <button role="tab" id="t-set" aria-selected="false">Asetukset</button>
   </nav>
 </header>
 
 <main>
 <section id="v-form">
+  <div id="msgBox" class="msgbox hide"><button id="msgClose" type="button">Sulje</button><b>Työnjohtajan viesti</b><div id="msgTxt"></div></div>
   <div id="editBanner" class="row banner hide">
     <b>Muokataan kirjausta</b>
     <small id="editLeft"></small>
     <button id="cancelEdit" type="button">Peruuta muokkaus</button>
   </div>
-  <label for="loading">Lastauspaikka</label>
-  <input type="text" id="loading" list="dl-loading" maxlength="40" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" placeholder="esim. 890lp3">
+  <div id="loadCard" class="loadcard hide">
+    <div>Kuorma kyydissä</div>
+    <div class="t" id="loadTime">0:00</div>
+    <b id="loadInfo"></b>
+  </div>
+
+  <label for="loadingSel">Lastauspaikka</label>
+  <div id="recentBox" class="chips" style="margin-bottom:10px"></div>
+  <select id="loadingSel"></select>
+  <input type="text" id="loading" class="hide" maxlength="40" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" placeholder="esim. 890lp3">
   <div class="err" id="e-loading"></div>
 
-  <div class="lbl">Purkupaikka</div>
+  <div class="lbl">Kiven laatu</div>
+  <div class="chips" id="grades"></div>
+  <div class="err" id="e-grade"></div>
+
+  <div class="lbl" id="lblDest">Purkupaikka</div>
   <div class="chips" id="dests"></div>
   <div class="err" id="e-dest"></div>
+  <div class="err" id="ruleWarn" style="color:#e69a00"></div>
 
   <div id="detailBox" class="hide">
     <label for="detail">Täytön tarkenne (valinnainen)</label>
@@ -92,11 +150,7 @@ input[type=password]{width:100%;font:inherit;font-size:22px;padding:14px;border:
     <div class="err" id="e-detail"></div>
   </div>
 
-  <div class="lbl">Kiven laatu</div>
-  <div class="chips" id="grades"></div>
-  <div class="err" id="e-grade"></div>
-
-  <label for="tonnes">Määrä (tonnia)</label>
+  <label for="tonnes" id="lblTonnes">Määrä (tonnia)</label>
   <input type="text" id="tonnes" inputmode="decimal" autocomplete="off" placeholder="0">
   <div class="err" id="e-tonnes"></div>
 
@@ -104,36 +158,47 @@ input[type=password]{width:100%;font:inherit;font-size:22px;padding:14px;border:
   <input type="text" id="machine" list="dl-machine" maxlength="20" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false">
   <div class="err" id="e-machine"></div>
 
-  <button class="save" id="save">Tallenna</button>
+  <button class="btnbig" id="btnLoad" type="button">LASTAA</button>
+  <button class="btnbig hide" id="btnUnload" type="button">PURA</button>
+  <button class="save hide" id="btnSave" type="button">Tallenna muutokset</button>
+  <div style="text-align:center"><button class="linkbtn hide" id="cancelLoad" type="button">Peru kuorma (painoin Lastaa vahingossa)</button></div>
 </section>
 
 <section id="v-list" class="hide">
+  <div class="card" id="myWeek"></div>
   <div class="tools">
-    <button id="csv">Vie Exceliin (CSV)</button>
+    <button id="csv">Vie varmuuskopio (CSV)</button>
   </div>
   <p class="sum" id="sum"></p>
   <div id="items"></div>
 </section>
+
+<section id="v-admin" class="hide">
+  <div class="card"><h3>Vuoro nyt</h3><div id="admShift" class="note"></div></div>
+  <div class="tools">
+    <select id="admDays" style="min-height:52px;font-size:17px;padding:8px">
+      <option value="1">1 päivä</option><option value="3" selected>3 päivää</option><option value="7">7 päivää</option><option value="14">14 päivää</option>
+    </select>
+    <button id="admLoad">Hae kirjaukset</button>
+    <button id="admCsv">CSV</button>
+  </div>
+  <p class="note" id="admMsg"></p>
+  <div id="admItems"></div>
+</section>
+
 <section id="v-set" class="hide">
-  <label for="cfgUrl">Palvelimen osoite</label>
-  <input type="text" id="cfgUrl" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" placeholder="https://script.google.com/macros/s/.../exec">
-  <p class="note">Ajokerrat tallentuvat aina ensin laitteelle ja lähetetään palvelimelle, kun verkko on käytettävissä.</p>
-  <button class="save" id="cfgSave">Tallenna asetukset</button>
-  <div class="tools" style="margin-top:16px">
+  <p class="note">Kirjaukset tallentuvat aina ensin laitteelle ja lähetetään palvelimelle, kun verkko on käytettävissä.</p>
+  <div class="tools" style="margin-top:12px">
     <button id="cfgTest">Testaa yhteys</button>
     <button id="syncNow">Lähetä nyt</button>
   </div>
   <p class="note" id="cfgMsg"></p>
   <p class="note" id="cfgPlaces"></p>
   <p class="note" id="cfgInfo"></p>
-
-  <div class="lbl">Asetuslinkki muille laitteille</div>
-  <p class="note">Tallenna asetukset ensin tälle laitteelle. Paina sitten alla olevaa nappia, kopioi linkki ja lähetä se muille laitteille. Linkin avaaminen ottaa palvelimen osoitteen käyttöön. Linkki ei sisällä salasanoja.</p>
   <div class="tools">
-    <button id="mkLink">Luo asetuslinkki</button>
+    <button id="helpBtn2">Ohje</button>
+    <button id="themeBtn">Vaihda teema</button>
   </div>
-  <input type="text" id="cfgLink" readonly class="hide" autocomplete="off" spellcheck="false">
-  <p class="note">Jokainen käyttäjä kirjautuu omalla tunnuksellaan ja salasanallaan.</p>
 
   <div class="lbl">Vaihda salasana</div>
   <input type="password" id="pwOld" placeholder="Nykyinen salasana" autocomplete="current-password">
@@ -149,11 +214,7 @@ input[type=password]{width:100%;font:inherit;font-size:22px;padding:14px;border:
 <div id="login" class="overlay hide">
   <div class="box">
     <h2>Kirjaudu sisään</h2>
-    <p class="note">Kaivoksen ajot</p>
-    <div id="lgUrlBox" class="hide">
-      <label for="lgUrl">Palvelimen osoite (työnjohtajalta)</label>
-      <input type="text" id="lgUrl" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" placeholder="https://script.google.com/macros/s/.../exec">
-    </div>
+    <p class="note">KultaJuna</p>
     <label for="lgUser">Tunnus</label>
     <input type="text" id="lgUser" autocomplete="username" autocorrect="off" autocapitalize="none" spellcheck="false">
     <label for="lgPass">Salasana</label>
@@ -162,7 +223,6 @@ input[type=password]{width:100%;font:inherit;font-size:22px;padding:14px;border:
     <p class="err" id="lgMsg"></p>
     <p class="note">Ensimmäinen kirjautuminen tällä laitteella vaatii verkkoyhteyden. Sen jälkeen kirjautuminen toimii myös ilman verkkoa.</p>
     <p class="note" id="lgInfo"></p>
-    <button class="linkbtn" id="lgChange" type="button">Vaihda palvelimen osoite</button>
   </div>
 </div>
 
@@ -180,23 +240,78 @@ input[type=password]{width:100%;font:inherit;font-size:22px;padding:14px;border:
   </div>
 </div>
 
+<div id="help" class="overlay hide" style="z-index:40">
+  <div class="box helptxt">
+    <h2>Näin kirjaat ajon</h2>
+    <ol>
+      <li><b>Kirjaudu</b> tunnuksellasi ja salasanallasi.</li>
+      <li><b>Paina Lastaa</b>, kun kuorma otetaan kyytiin. Valitse lastauspaikka, kiven laatu ja tarkista konenumero. Voit valita jo tässä vaiheessa purkupaikan ja tonnimäärän.</li>
+      <li><b>Aja kuorma perille.</b> Sovellus muistaa kuorman, vaikka suljet sen tai verkko katkeaa.</li>
+      <li><b>Paina Pura</b> purkupaikalla. Tarkista purkupaikka ja tonnit. Ruutu näyttää vihreän rastin ja laite värähtää, kun kirjaus on tallennettu.</li>
+    </ol>
+    <h3>Muista</h3>
+    <ul>
+      <li>Laatu on aina pakollinen.</li>
+      <li>Jos laatu ja purkupaikka eivät täsmää, sovellus varoittaa. Vahvista vain, jos olet varma.</li>
+      <li>Voit korjata omaa kirjaustasi 10 minuutin ajan Pura-painalluksen jälkeen. Sen jälkeen korjauksen tekee työnjohtaja.</li>
+      <li>Jos painoit Lastaa vahingossa, paina "Peru kuorma" ennen Pura-painallusta.</li>
+    </ul>
+    <h3>Ei verkkoa?</h3>
+    <p>Kirjaa normaalisti. Kirjaukset tallentuvat laitteelle ja lähtevät palvelimelle itsestään, kun verkko palaa. Yläreunasta näet, kuinka monta kirjausta odottaa lähetystä.</p>
+    <h3>Vuoron lopussa</h3>
+    <p>Vuoron viimeisellä puolella tunnilla (6.30–7.00 ja 18.30–19.00) sovellus näyttää vuoron yhteenvedon, jos se on silloin auki. Jokaisesta täydestä kultaharkosta saat ilmoituksen.</p>
+    <div id="helpInfo"></div>
+    <h3>Ongelmatilanteessa</h3>
+    <p>Ota yhteys työnjohtajaan. Älä vaihda laitteen kelloa, koska kirjausten ajat tulevat siitä.</p>
+    <button class="save" id="helpClose" type="button">Selvä</button>
+  </div>
+</div>
+
+<div id="sumView" class="overlay hide" style="z-index:45">
+  <div class="box" style="text-align:center">
+    <h2 id="sumTitle">Vuoron yhteenveto</h2>
+    <div class="sumline" id="sumTonnes"></div>
+    <div id="sumBars"></div>
+    <p class="note" id="sumOwn"></p>
+    <p style="font-size:20px;font-weight:700">Hyvä vuoro!</p>
+    <button class="save" id="sumClose" type="button">Sulje</button>
+  </div>
+</div>
+
+<div id="admEdit" class="overlay hide" style="z-index:42">
+  <div class="box">
+    <h2>Muokkaa kirjausta</h2>
+    <p class="note" id="admEditWho"></p>
+    <label for="aeLoad">Lastauspaikka</label><input type="text" id="aeLoad" maxlength="40" autocomplete="off" autocapitalize="none" spellcheck="false">
+    <label for="aeGrade">Laatu</label><select id="aeGrade"></select>
+    <label for="aeDest">Purkupaikka</label><select id="aeDest"></select>
+    <label for="aeDetail">Täytön tarkenne</label><input type="text" id="aeDetail" maxlength="30" autocomplete="off" autocapitalize="none" spellcheck="false">
+    <label for="aeTonnes">Tonnit</label><input type="text" id="aeTonnes" inputmode="decimal" autocomplete="off">
+    <label for="aeMachine">Konenumero</label><input type="text" id="aeMachine" maxlength="20" autocomplete="off" autocapitalize="characters">
+    <label for="aeLoaded">Lastausaika</label><input type="datetime-local" id="aeLoaded">
+    <label for="aeUnloaded">Purkuaika (virallinen aika)</label><input type="datetime-local" id="aeUnloaded">
+    <button class="save" id="aeSave" type="button">Tallenna</button>
+    <p class="err" id="aeMsg"></p>
+    <button class="linkbtn" id="aeCancel" type="button">Peruuta</button>
+  </div>
+</div>
+
+<div id="flash" class="flash hide" role="status"><div id="flashIcon"></div><div id="flashTitle"></div><div id="flashSub"></div></div>
+
 <datalist id="dl-loading"></datalist>
 <datalist id="dl-machine"></datalist>
 <div class="toast" id="toast"></div>
 
 <script>
 "use strict";
-const GRADES=[
-  {code:"HG",name:"HG"},{code:"PERA_LG",name:"PeräLG"},{code:"LOUHOS_LG",name:"LouhosLG"},
-  {code:"MM",name:"MM"},{code:"RAAKKU",name:"Raakku"},{code:"EOS",name:"EOS"}];
-const DESTS=[
-  {id:"crusher",name:"Murskankenttä",type:"crusher_pad"},
-  {id:"waste",name:"Raakkupenkka",type:"waste_dump"},
-  {id:"fill",name:"Täyttö",type:"backfill"}];
-// Sallitut purkupaikkatyypit laadun mukaan (muuta tästä, jos säännöt muuttuvat)
-const ALLOWED={HG:["crusher_pad"],PERA_LG:["crusher_pad"],LOUHOS_LG:["crusher_pad"],
-  MM:["crusher_pad"],EOS:["crusher_pad"],RAAKKU:["waste_dump","backfill"]};
-const KEY="kaivos_hauls_v1", DEVKEY="kaivos_device_v1";
+// ---------- Oletuslistat (käytössä, kunnes työnjohtajan taulukon listat on haettu) ----------
+const DEFAULT_GRADES=[
+  {name:"HG",dests:["Murskankenttä"]},{name:"PeräLG",dests:["Murskankenttä"]},{name:"LouhosLG",dests:["Murskankenttä"]},
+  {name:"MM",dests:["Murskankenttä"]},{name:"Raakku",dests:["Raakkupenkka","Täyttö"]},{name:"EOS",dests:["Murskankenttä"]}];
+const DEFAULT_DESTS=[{name:"Murskankenttä",detail:false},{name:"Raakkupenkka",detail:false},{name:"Täyttö",detail:true}];
+const SHIFT_DAY=7, SHIFT_NIGHT=19;
+const KEY="kaivos_hauls_v1", DEVKEY="kaivos_device_v1", LOADKEY="kaivos_load_v1", HARKKOKEY="kultajuna_harkko_v1",
+  SHIFTKEY="kultajuna_shift_v1", SUMKEY="kultajuna_sumshown_v1", HELPKEY="kultajuna_help_v1", THEMEKEY="kultajuna_theme";
 const PLACE_BAD=/[^A-Za-z0-9ÅÄÖåäö]/g, PLACE_OK=/^[A-Za-z0-9ÅÄÖåäö]{3,}$/;
 
 const $=id=>document.getElementById(id);
@@ -211,13 +326,14 @@ function readSession(){
   try{
     const x=JSON.parse(localStorage.getItem(SESSKEY)||"null");
     const u=x&&users()[x.u];
-    if(x&&u&&!u.disabled&&Date.now()-x.at<SESS_MS)return x;
+    if(x&&u&&!u.disabled&&Date.now()-x.at<SESS_MS){x.role=u.role||"driver";return x}
   }catch(e){}
   return null;
 }
 let session=readSession();
 let memPassword=null;   // salasana pysyy vain muistissa, ei tallennu laitteelle
 function curUser(){return session?session.u:null}
+function isAdmin(){return !!session&&session.role==="admin"}
 function nameOf(u){const p=users()[u];return p&&p.name||u}
 function mine(){return hauls.filter(h=>h.userId===curUser())}
 function lastOwn(){const m=mine();return m.length?m[m.length-1]:null}
@@ -225,7 +341,7 @@ function lastOwn(){const m=mine();return m.length?m[m.length-1]:null}
 function load(){try{return JSON.parse(localStorage.getItem(KEY)||"[]")}catch(e){return[]}}
 function persist(){
   try{localStorage.setItem(KEY,JSON.stringify(hauls));return true}
-  catch(e){alert("Tallennus epäonnistui. Vie tiedot Exceliin ja vapauta tilaa.");return false}
+  catch(e){return false}
 }
 function uuid(){
   if(crypto&&crypto.randomUUID)return crypto.randomUUID();
@@ -234,9 +350,87 @@ function uuid(){
 function deviceId(){
   try{let d=localStorage.getItem(DEVKEY);if(!d){d=uuid();localStorage.setItem(DEVKEY,d)}return d}catch(e){return"unknown"}
 }
-function toast(msg){const t=$("toast");t.textContent=msg;t.classList.add("on");setTimeout(()=>t.classList.remove("on"),1800)}
+function toast(msg){const t=$("toast");t.textContent=msg;t.classList.add("on");clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.remove("on"),2200)}
 function fmt(t){return Number.isInteger(t)?String(t):t.toFixed(1)}
 function esc(s){return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
+function jget(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}}
+function jset(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}
+function hhmm(ms){return new Date(ms).toLocaleTimeString("fi-FI",{hour:"2-digit",minute:"2-digit"})}
+function buzz(p){try{if(navigator.vibrate)navigator.vibrate(p)}catch(e){}}
+
+// ---------- Värinä- ja symbolivahvistus ----------
+const ICON_OK='<svg viewBox="0 0 100 100" width="150" height="150"><circle cx="50" cy="50" r="46" fill="#fff"/><path d="M28 52L44 68L74 34" stroke="#2e7d32" stroke-width="10" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+const ICON_ERR='<svg viewBox="0 0 100 100" width="150" height="150"><circle cx="50" cy="50" r="46" fill="#fff"/><path d="M33 33L67 67M67 33L33 67" stroke="#b3261e" stroke-width="10" fill="none" stroke-linecap="round"/></svg>';
+function barSvg(cls){return '<svg class="bar '+(cls||"")+'" viewBox="0 0 120 70" aria-hidden="true"><use href="#gbar"/></svg>'}
+let flashQ=[],flashOn=false,flashT=null;
+function flash(o){flashQ.push(o);if(!flashOn)nextFlash()}
+function nextFlash(){
+  const o=flashQ.shift(),f=$("flash");
+  if(!o){flashOn=false;f.classList.add("hide");return}
+  flashOn=true;
+  f.className="flash "+o.kind;
+  $("flashIcon").innerHTML=o.icon;$("flashTitle").textContent=o.title;$("flashSub").textContent=o.sub||"";
+  buzz(o.buzz);
+  clearTimeout(flashT);flashT=setTimeout(nextFlash,o.ms||1500);
+}
+$("flash").onclick=()=>{clearTimeout(flashT);nextFlash()};
+
+// ---------- Listat (työnjohtajan Google-taulukko) ----------
+const PLACESKEY="kaivos_places_v1";
+function conf(){
+  const p=jget(PLACESKEY,{});
+  return{list:p.list||[],mode:p.mode||"free",
+    grades:(p.grades&&p.grades.length)?p.grades:DEFAULT_GRADES,
+    dests:(p.dests&&p.dests.length)?p.dests:DEFAULT_DESTS,
+    settings:p.settings||{},at:p.at||null};
+}
+// Tila vaikuttaa vain täytön tarkenteeseen
+function placeMode(){const p=conf();return p.list.length?p.mode:"free"}
+function officialMatch(v){
+  const x=(v||"").toLowerCase();
+  return conf().list.find(o=>o.toLowerCase()===x)||null;
+}
+function allowed(g,d){
+  const l=(g&&g.dests)||[];
+  if(!l.length)return true;
+  return l.some(x=>x.toLowerCase()===d.name.toLowerCase());
+}
+function findGrade(name){return conf().grades.find(g=>g.name===name)||(name?{name,dests:[]}:null)}
+function findDest(name){return conf().dests.find(d=>d.name===name)||(name?{name,detail:false}:null)}
+function limitTn(){const l=parseFloat(conf().settings.harkkoraja);return l>0?l:500}
+function updPlacesInfo(msg){
+  const c=conf();
+  $("cfgPlaces").textContent=msg||(c.at?`Listat haettu ${new Date(c.at).toLocaleString("fi-FI",{day:"numeric",month:"numeric",hour:"2-digit",minute:"2-digit"})}: ${c.list.length} lastauspaikkaa, ${c.grades.length} laatua, ${c.dests.length} purkupaikkaa`:"Listoja ei ole vielä haettu (käytössä oletuslistat)");
+}
+let pulling=false;
+async function pullConfig(manual){
+  if(pulling)return;
+  if(!manual&&navigator.onLine===false)return;
+  const u=curUser();if(!u)return;
+  pulling=true;
+  try{
+    let j;
+    try{j=await apiAs(u,{action:"config"})}
+    catch(e){if(e.server&&e.code==="unknown")j=await apiAs(u,{action:"places"});else throw e}
+    if(Array.isArray(j.places)){
+      jset(PLACESKEY,{list:j.places,mode:j.mode||"free",grades:j.grades||[],dests:j.dests||[],settings:j.settings||{},at:new Date().toISOString()});
+      onConfigChanged();
+      if(manual)toast("Listat päivitetty");
+    }else if(manual)toast("Palvelin ei tue listoja. Päivitä Apps Script.");
+  }catch(e){if(manual)toast("Listojen haku epäonnistui: "+e.message)}
+  finally{pulling=false}
+}
+function onConfigChanged(){
+  renderLoadingEl();drawChips();suggestions();updPlacesInfo();showMsg();renderRecent();renderShift();
+}
+
+function uniq(list){const s=new Set();return list.filter(v=>v&&!s.has(v.toLowerCase())&&s.add(v.toLowerCase()))}
+function fillList(id,values){$(id).innerHTML=values.slice(0,300).map(v=>`<option value="${esc(v)}">`).join("")}
+function suggestions(){
+  const r=[...hauls].reverse();
+  fillList("dl-loading",uniq([...conf().list,...r.map(h=>h.unloadingDetail).filter(Boolean)]));
+  fillList("dl-machine",uniq(r.map(h=>h.machineNumber)));
+}
 
 // ---------- Valintapainikkeet ----------
 function chips(box,items,key,onPick){
@@ -244,147 +438,225 @@ function chips(box,items,key,onPick){
   items.forEach(it=>{
     const b=document.createElement("button");
     b.type="button";b.className="chip";b.textContent=it.name;
-    b.setAttribute("aria-pressed",sel[key]&&sel[key].name===it.name);
+    b.setAttribute("aria-pressed",!!(sel[key]&&sel[key].name===it.name));
     b.onclick=()=>{sel[key]=it;chips(box,items,key,onPick);onPick&&onPick(it)};
     box.appendChild(b);
   });
 }
+function drawChips(){
+  const c=conf();
+  const gl=c.grades.slice();if(sel.grade&&!gl.some(g=>g.name===sel.grade.name))gl.push(sel.grade);
+  const dl=c.dests.slice();if(sel.dest&&!dl.some(d=>d.name===sel.dest.name))dl.push(sel.dest);
+  chips($("grades"),gl,"grade",onGrade);chips($("dests"),dl,"dest",onDest);
+  $("detailBox").classList.toggle("hide",!(sel.dest&&sel.dest.detail));
+  updRuleWarn();
+}
+function updRuleWarn(){
+  const g=sel.grade,d=sel.dest;
+  $("ruleWarn").textContent=(g&&d&&!allowed(g,d))?`⚠ ${g.name} ei yleensä mene kohteeseen ${d.name}`:"";
+}
 function onDest(d){
-  $("detailBox").classList.toggle("hide",d.type!=="backfill");
-  if(d.type!=="backfill")$("detail").value="";
+  $("detailBox").classList.toggle("hide",!d.detail);
+  if(!d.detail)$("detail").value="";
+  setErr("dest","");updRuleWarn();saveDraft();
 }
+function onGrade(){setErr("grade","");updRuleWarn();saveDraft()}
 
-// ---------- Ehdotukset aiemmista kirjauksista ----------
-function uniq(list){const s=new Set();return list.filter(v=>v&&!s.has(v.toLowerCase())&&s.add(v.toLowerCase()))}
-function fillList(id,values){$(id).innerHTML=values.slice(0,300).map(v=>`<option value="${esc(v)}">`).join("")}
-// ---------- Virallinen paikkalista (työnjohtajan Google-taulukko) ----------
-const PLACESKEY="kaivos_places_v1";
-function placesData(){
-  try{const p=JSON.parse(localStorage.getItem(PLACESKEY)||"{}");return{list:p.list||[],mode:p.mode||"free",at:p.at||null}}
-  catch(e){return{list:[],mode:"free",at:null}}
+// ---------- Lastauspaikka: alasvetovalikko (tai vapaa teksti, jos listaa ei ole haettu) ----------
+function loadingMode(){return conf().list.length?"sel":"txt"}
+function renderLoadingEl(){
+  const list=conf().list,s=$("loadingSel"),useSel=list.length>0;
+  const cur=getLoading();
+  s.classList.toggle("hide",!useSel);$("loading").classList.toggle("hide",useSel);
+  if(useSel){
+    s.innerHTML='<option value="">Valitse lastauspaikka</option>'+list.map(v=>`<option value="${esc(v)}">${esc(v)}</option>`).join("");
+    if(cur)setLoading(cur);
+  }
 }
-// Tila "free" käytössä, jos listaa ei ole vielä haettu tai se on tyhjä (ettei kirjaus koskaan jumitu)
-function placeMode(){const p=placesData();return p.list.length?p.mode:"free"}
-function officialMatch(v){
-  const x=(v||"").toLowerCase();
-  return placesData().list.find(o=>o.toLowerCase()===x)||null;
+function getLoading(){return loadingMode()==="sel"?$("loadingSel").value:$("loading").value}
+function setLoading(v){
+  v=v||"";
+  if(loadingMode()==="sel"){
+    const s=$("loadingSel");
+    let m=[...s.options].find(o=>o.value.toLowerCase()===v.toLowerCase());
+    if(!m&&v){m=document.createElement("option");m.value=v;m.textContent=v;s.appendChild(m)}
+    s.value=m?m.value:"";
+  }else $("loading").value=v;
 }
-function updPlacesInfo(msg){
-  const p=placesData();
-  $("cfgPlaces").textContent=msg||(p.at?`Paikkalista: ${p.list.length} paikkaa, tila "${p.mode}", haettu ${new Date(p.at).toLocaleString("fi-FI",{day:"numeric",month:"numeric",hour:"2-digit",minute:"2-digit"})}`:"Paikkalistaa ei ole vielä haettu");
+function renderRecent(){
+  const box=$("recentBox");box.innerHTML="";
+  const list=conf().list.map(x=>x.toLowerCase()),seen=new Set(),out=[];
+  [...mine()].reverse().forEach(h=>{
+    const k=(h.loadingPlace||"").toLowerCase();
+    if(!k||seen.has(k)||out.length>=3)return;
+    if(list.length&&!list.includes(k))return;
+    seen.add(k);out.push(h.loadingPlace);
+  });
+  out.forEach(p=>{
+    const b=document.createElement("button");
+    b.type="button";b.className="chip small";b.textContent=p;
+    b.onclick=()=>{setLoading(p);setErr("loading","");saveDraft()};
+    box.appendChild(b);
+  });
 }
-let pulling=false;
-async function pullPlaces(manual){
-  const c=cfg();
-  if(!c.url||pulling){if(manual&&!c.url)toast("Aseta palvelimen osoite Asetuksissa");return}
-  if(!manual&&navigator.onLine===false)return;
-  pulling=true;
-  try{
-    const u=curUser();if(!u)return;
-    const j=await apiAs(u,{action:"places"});
-    if(Array.isArray(j.places)){
-      localStorage.setItem(PLACESKEY,JSON.stringify({list:j.places,mode:j.mode||"free",at:new Date().toISOString()}));
-      suggestions();updPlacesInfo();
-      if(manual)toast("Paikkalista päivitetty ("+j.places.length+")");
-    }else if(manual)toast("Palvelin ei tue paikkalistaa. Päivitä Apps Script.");
-  }catch(e){if(manual)toast("Paikkalistan haku epäonnistui: "+e.message)}
-  finally{pulling=false}
-}
-
-function suggestions(){
-  const r=[...hauls].reverse();
-  const recent=uniq(r.flatMap(h=>[h.loadingPlace,h.unloadingDetail]).filter(Boolean));
-  fillList("dl-loading",uniq([...placesData().list,...recent]));
-  fillList("dl-machine",uniq(r.map(h=>h.machineNumber)));
-}
-function prefill(){
-  const l=lastOwn();if(!l)return;
-  $("loading").value=l.loadingPlace;$("machine").value=l.machineNumber;
-  sel.dest=DESTS.find(d=>d.id===l.unloadingId)||null;
-  if(sel.dest){onDest(sel.dest);if(sel.dest.type==="backfill")$("detail").value=l.unloadingDetail||""}
-  const g=GRADES.find(g=>g.code===l.gradeCode);
-  sel.grade=g&&g.code!=="EOS"?g:null; // EOS ei esitäyty
-}
-
-// ---------- Syöttö ----------
+["loadingSel","loading","detail","tonnes","machine"].forEach(id=>$(id).addEventListener("change",()=>saveDraft()));
 ["loading","detail"].forEach(id=>$(id).addEventListener("input",e=>{
-  const c=e.target.value.replace(PLACE_BAD,"");if(c!==e.target.value)e.target.value=c;
+  const c=e.target.value.replace(PLACE_BAD,"");if(c!==e.target.value)e.target.value=c;saveDraft();
 }));
 $("machine").addEventListener("input",e=>{
-  e.target.value=e.target.value.replace(/[^A-Za-z0-9-]/g,"").toUpperCase();
+  e.target.value=e.target.value.replace(/[^A-Za-z0-9-]/g,"").toUpperCase();saveDraft();
 });
-$("tonnes").addEventListener("input",e=>{e.target.value=e.target.value.replace(/[^0-9.,]/g,"")});
+$("tonnes").addEventListener("input",e=>{e.target.value=e.target.value.replace(/[^0-9.,]/g,"");saveDraft()});
 
 function setErr(id,msg){$("e-"+id).textContent=msg||"";return!msg}
 
-function validate(){
-  let ok=true;
-  const lp=$("loading").value;
-  ok&=setErr("loading",!lp?"Syötä lastauspaikka":!PLACE_OK.test(lp)?"Vähintään 3 merkkiä, vain kirjaimia ja numeroita":"");
-  ok&=setErr("dest",sel.dest?"":"Valitse purkupaikka");
-  const dt=$("detail").value;
-  ok&=setErr("detail",dt&&!PLACE_OK.test(dt)?"Vähintään 3 merkkiä, vain kirjaimia ja numeroita":"");
-  if(placeMode()==="strict"){
-    if(lp&&PLACE_OK.test(lp)&&!officialMatch(lp))ok&=setErr("loading","Valitse lastauspaikka listasta");
-    if(dt&&PLACE_OK.test(dt)&&!officialMatch(dt))ok&=setErr("detail","Valitse tarkenne listasta");
+// ---------- Kesken oleva kuorma (Lastaa -> Pura) ----------
+function readLoads(){return jget(LOADKEY,{})}
+function activeLoad(){const u=curUser();return u?(readLoads()[u]||null):null}
+function storeLoad(l){const o=readLoads();if(l)o[l.user]=l;else delete o[curUser()];jset(LOADKEY,o)}
+function mode(){return editId?"edit":activeLoad()?"loaded":"idle"}
+function saveDraft(){
+  if(mode()!=="loaded")return;
+  const l=activeLoad();if(!l)return;
+  l.loadingPlace=getLoading();l.gradeName=sel.grade?sel.grade.name:"";
+  l.destName=sel.dest?sel.dest.name:"";l.detail=$("detail").value;
+  l.tonnes=$("tonnes").value;l.machine=$("machine").value;
+  storeLoad(l);updLoadCard();
+}
+function updLoadCard(){
+  const l=activeLoad();if(!l)return;
+  const s=Math.max(0,Math.floor((Date.now()-Date.parse(l.loadedAt))/1000));
+  $("loadTime").textContent=Math.floor(s/60)+":"+String(s%60).padStart(2,"0");
+  $("loadInfo").textContent=[l.loadingPlace,l.gradeName].filter(Boolean).join(" · ");
+}
+function applyMode(){
+  const m=mode();
+  $("btnLoad").classList.toggle("hide",m!=="idle");
+  $("btnUnload").classList.toggle("hide",m!=="loaded");
+  $("btnSave").classList.toggle("hide",m!=="edit");
+  $("loadCard").classList.toggle("hide",m!=="loaded");
+  $("cancelLoad").classList.toggle("hide",m!=="loaded");
+  $("editBanner").classList.toggle("hide",m!=="edit");
+  $("recentBox").classList.toggle("hide",m==="edit");
+  $("lblDest").textContent=m==="idle"?"Purkupaikka (voit valita jo nyt)":"Purkupaikka";
+  $("lblTonnes").textContent=m==="idle"?"Määrä, tonnia (voit syöttää jo nyt)":"Määrä (tonnia)";
+  updLoadCard();
+}
+// Täyttää lomakkeen kesken olevasta kuormasta tai tyhjentää sen (konenumero säilyy)
+function restoreForm(){
+  const l=activeLoad(),own=lastOwn();
+  document.querySelectorAll("#v-form .err").forEach(e=>{if(e.id!=="ruleWarn")e.textContent=""});
+  if(l){
+    setLoading(l.loadingPlace);
+    sel.grade=l.gradeName?findGrade(l.gradeName):null;
+    sel.dest=l.destName?findDest(l.destName):null;
+    $("detail").value=l.detail||"";$("tonnes").value=l.tonnes||"";
+    $("machine").value=l.machine||(own?own.machineNumber:"");
+  }else{
+    setLoading("");sel.grade=null;sel.dest=null;
+    $("detail").value="";$("tonnes").value="";
+    $("machine").value=own?own.machineNumber:($("machine").value||"");
   }
-  ok&=setErr("grade",sel.grade?"":"Valitse kiven laatu");
-  const t=parseFloat($("tonnes").value.replace(",","."));
-  ok&=setErr("tonnes",isNaN(t)?"Syötä määrä numerona":t<=0?"Määrän täytyy olla yli 0":t>500?"Määrä vaikuttaa liian suurelta":"");
-  ok&=setErr("machine",$("machine").value?"":"Syötä konenumero");
-  return!!ok;
+  drawChips();renderRecent();applyMode();
 }
 
-$("save").onclick=()=>{
-  if(!session){showLogin();return}
-  if(!validate()){const e=document.querySelector("#v-form .err:not(:empty)");e&&e.scrollIntoView({block:"center",behavior:"smooth"});return}
+function validateForm(full){
+  let ok=true;
+  const lp=getLoading();
+  ok&=setErr("loading",!lp?"Valitse lastauspaikka":(loadingMode()==="txt"&&!PLACE_OK.test(lp)?"Vähintään 3 merkkiä, vain kirjaimia ja numeroita":""));
+  ok&=setErr("grade",sel.grade?"":"Valitse kiven laatu");
+  ok&=setErr("dest",(full&&!sel.dest)?"Valitse purkupaikka":"");
+  const tv=$("tonnes").value.trim();
+  if(full||tv){
+    const t=parseFloat(tv.replace(",","."));
+    ok&=setErr("tonnes",isNaN(t)?"Syötä määrä numerona":t<=0?"Määrän täytyy olla yli 0":t>500?"Määrä vaikuttaa liian suurelta":"");
+  }else setErr("tonnes","");
+  ok&=setErr("machine",$("machine").value?"":"Syötä konenumero");
+  const dt=(sel.dest&&sel.dest.detail)?$("detail").value:"";
+  ok&=setErr("detail",dt&&!PLACE_OK.test(dt)?"Vähintään 3 merkkiä, vain kirjaimia ja numeroita":"");
+  if(dt&&PLACE_OK.test(dt)&&placeMode()==="strict"&&!officialMatch(dt))ok&=setErr("detail","Valitse tarkenne listasta");
+  return !!ok;
+}
+function scrollErr(){const e=document.querySelector("#v-form .err:not(:empty):not(#ruleWarn)");e&&e.scrollIntoView({block:"center",behavior:"smooth"})}
+
+// Kentät talletettavaksi kirjaukseksi
+function collectFields(){
   const d=sel.dest,g=sel.grade;
-  const allowed=ALLOWED[g.code];
-  const override=!!allowed&&!allowed.includes(d.type);
-  if(override&&!confirm(g.name+" ei yleensä mene kohteeseen "+d.name+". Tallennetaanko silti?"))return;
-  // Virallisen listan paikat tallennetaan listan kirjoitusasulla (esim. 890LP3 -> 890lp3)
-  const lpRaw=$("loading").value,dtRaw=d.type==="backfill"?$("detail").value:"";
-  const lpVal=officialMatch(lpRaw)||lpRaw,dtVal=dtRaw?(officialMatch(dtRaw)||dtRaw):null;
-  if(placeMode()==="warn"){
-    const unk=[];
-    if(!officialMatch(lpRaw))unk.push(lpRaw);
-    if(dtRaw&&!officialMatch(dtRaw))unk.push(dtRaw);
-    if(unk.length&&!confirm(unk.join(", ")+" ei ole paikkalistalla. Tarkista kirjoitusasu.\n\nTallennetaanko silti?"))return;
-  }
-  const now=new Date().toISOString();
-  const fields={
-    loadingPlace:lpVal,
-    unloadingId:d.id,unloadingName:d.name,
-    unloadingDetail:dtVal,
-    gradeCode:g.code,gradeName:g.name,
+  const lpRaw=getLoading(),dtRaw=d&&d.detail?$("detail").value:"";
+  return{
+    loadingPlace:officialMatch(lpRaw)||lpRaw,
+    unloadingId:d.name,unloadingName:d.name,
+    unloadingDetail:dtRaw?(officialMatch(dtRaw)||dtRaw):null,
+    gradeCode:g.name,gradeName:g.name,
     tonnes:parseFloat($("tonnes").value.replace(",",".")),
     driverName:session.name,userId:session.u,machineNumber:$("machine").value,
-    ruleOverride:override
+    ruleOverride:!allowed(g,d)
   };
+}
+// Vahvistukset ennen purkua/muutosten tallennusta. Palauttaa true, jos jatketaan.
+function confirmRules(f){
+  if(f.ruleOverride&&!confirm(f.gradeName+" ei yleensä mene kohteeseen "+f.unloadingName+". Tallennetaanko silti?"))return false;
+  const dtRaw=sel.dest&&sel.dest.detail?$("detail").value:"";
+  if(placeMode()==="warn"&&dtRaw&&!officialMatch(dtRaw)&&!confirm(dtRaw+" ei ole paikkalistalla. Tarkista kirjoitusasu.\n\nTallennetaanko silti?"))return false;
+  return true;
+}
 
-  if(editId){
-    const h=hauls.find(x=>x.id===editId);
-    if(!h||!canEdit(h)){stopEdit();toast("Muokkausaika (10 min) on päättynyt");render();return}
-    const backup=JSON.stringify(h);
-    Object.assign(h,fields,{edited:true,editedAt:now,synced:false});
-    if(!persist()){Object.assign(h,JSON.parse(backup));return}
-    stopEdit();suggestions();render();
-    toast("Muutokset tallennettu");sync();
-    return;
-  }
-
-  hauls.push(Object.assign({
-    id:uuid(),deviceId:deviceId(),
-    isVoided:false,occurredAt:now,createdAt:now,synced:false
-  },fields));
-  if(!persist()){hauls.pop();return}
-  $("tonnes").value="";suggestions();render();
-  toast("Ajokerta tallennettu");sync();
-  if(storagePersisted!==true)askPersist().then(updInfo);
-  $("tonnes").focus();
+// ---------- Lastaa ----------
+$("btnLoad").onclick=()=>{
+  if(!session){showLogin();return}
+  if(!validateForm(false)){scrollErr();return}
+  const now=new Date(),last=lastOwn();
+  const l={id:uuid(),user:curUser(),loadedAt:now.toISOString(),
+    clockWarn:!!(last&&Date.parse(last.occurredAt)>now.getTime()+60000)};
+  storeLoad(l);
+  saveDraftForce(l);
+  applyMode();
+  buzz(70);
+  toast(l.clockWarn?"Lastaus kirjattu. Huom: laitteen kello näyttää menneen taaksepäin!":"Lastaus kirjattu. Paina Pura perillä.");
+  window.scrollTo(0,0);
+};
+function saveDraftForce(l){
+  l.loadingPlace=getLoading();l.gradeName=sel.grade?sel.grade.name:"";
+  l.destName=sel.dest?sel.dest.name:"";l.detail=$("detail").value;
+  l.tonnes=$("tonnes").value;l.machine=$("machine").value;
+  storeLoad(l);
+}
+$("cancelLoad").onclick=()=>{
+  if(!confirm("Perutaanko kuorma? Lastausta ei kirjata."))return;
+  storeLoad(null);restoreForm();toast("Kuorma peruttu");
 };
 
-// ---------- Muokkaus (10 min kirjauksesta) ----------
+// ---------- Pura ----------
+$("btnUnload").onclick=()=>{
+  const l=activeLoad();
+  if(!session){showLogin();return}
+  if(!l){restoreForm();return}
+  if(!validateForm(true)){scrollErr();return}
+  const f=collectFields();
+  if(!confirmRules(f))return;
+  const now=new Date(),iso=now.toISOString();
+  const dur=Math.max(0,Math.round((now.getTime()-Date.parse(l.loadedAt))/60000));
+  const h=Object.assign({
+    id:l.id,deviceId:deviceId(),isVoided:false,
+    occurredAt:iso,createdAt:iso,loadedAt:l.loadedAt,durationMin:dur,
+    clockWarn:!!(l.clockWarn||now.getTime()<Date.parse(l.loadedAt)),synced:false
+  },f);
+  hauls.push(h);
+  if(!persist()){
+    hauls.pop();
+    flash({kind:"err",icon:ICON_ERR,title:"Tallennus epäonnistui",sub:"Kuorma on yhä kyydissä. Vapauta tilaa ja yritä uudelleen.",buzz:[300,100,300],ms:3500});
+    return;
+  }
+  storeLoad(null);
+  restoreForm();suggestions();render();
+  flash({kind:"ok",icon:ICON_OK,title:"Purku kirjattu",sub:fmt(h.tonnes)+" t "+h.gradeName,buzz:[90,60,90],ms:1500});
+  sync();
+  if(storagePersisted!==true)askPersist().then(updInfo);
+  renderShift();checkHarkko();
+  window.scrollTo(0,0);
+};
+
+// ---------- Muokkaus (10 min purusta) ----------
 const EDIT_MS=10*60*1000;
 let editId=null;
 function canEdit(h){return !h.isVoided&&h.userId===curUser()&&Date.now()-new Date(h.createdAt).getTime()<EDIT_MS}
@@ -395,37 +667,31 @@ function editLeftText(h){
 }
 function startEdit(h){
   editId=h.id;
-  $("loading").value=h.loadingPlace;
-  sel.dest=DESTS.find(d=>d.id===h.unloadingId)||null;
-  if(sel.dest)onDest(sel.dest);
+  setLoading(h.loadingPlace);
+  sel.dest=findDest(h.unloadingName);sel.grade=findGrade(h.gradeName);
   $("detail").value=h.unloadingDetail||"";
-  sel.grade=GRADES.find(x=>x.code===h.gradeCode)||null;
   $("tonnes").value=String(h.tonnes).replace(".",",");
   $("machine").value=h.machineNumber;
-  chips($("dests"),DESTS,"dest",onDest);chips($("grades"),GRADES,"grade");
-  document.querySelectorAll(".err").forEach(e=>e.textContent="");
-  $("save").textContent="Tallenna muutokset";
-  $("editBanner").classList.remove("hide");
+  document.querySelectorAll("#v-form .err").forEach(e=>{if(e.id!=="ruleWarn")e.textContent=""});
+  drawChips();
   $("editLeft").textContent=editLeftText(h);
-  tab("form");
+  applyMode();tab("form");
 }
-function stopEdit(){
-  editId=null;
-  $("editBanner").classList.add("hide");
-  $("save").textContent="Tallenna";
-  $("tonnes").value="";
-  const l=lastOwn();
-  if(l){ // palautetaan esitäyttö viimeisimmästä omasta kirjauksesta
-    $("loading").value=l.loadingPlace;$("machine").value=l.machineNumber;
-    sel.dest=DESTS.find(d=>d.id===l.unloadingId)||null;
-    if(sel.dest)onDest(sel.dest);
-    $("detail").value=sel.dest&&sel.dest.type==="backfill"?(l.unloadingDetail||""):"";
-    const g=GRADES.find(x=>x.code===l.gradeCode);sel.grade=g&&g.code!=="EOS"?g:null;
-    chips($("dests"),DESTS,"dest",onDest);chips($("grades"),GRADES,"grade");
-  }
-}
+function stopEdit(){editId=null;restoreForm()}
 $("cancelEdit").onclick=()=>{stopEdit();toast("Muokkaus peruttu")};
-// Päivitä jäljellä oleva aika ja piilota muokkausnapit ajan umpeuduttua
+$("btnSave").onclick=()=>{
+  if(!session){showLogin();return}
+  if(!validateForm(true)){scrollErr();return}
+  const f=collectFields();
+  if(!confirmRules(f))return;
+  const h=hauls.find(x=>x.id===editId);
+  if(!h||!canEdit(h)){stopEdit();toast("Muokkausaika (10 min) on päättynyt");render();return}
+  const backup=JSON.stringify(h);
+  Object.assign(h,f,{edited:true,editedAt:new Date().toISOString(),synced:false});
+  if(!persist()){Object.assign(h,JSON.parse(backup));toast("Tallennus epäonnistui");return}
+  stopEdit();suggestions();render();
+  toast("Muutokset tallennettu");sync();renderShift();
+};
 let lastEditable=-1;
 setInterval(()=>{
   if(editId){
@@ -433,6 +699,7 @@ setInterval(()=>{
     if(!h||!canEdit(h)){stopEdit();toast("Muokkausaika (10 min) päättyi")}
     else $("editLeft").textContent=editLeftText(h);
   }
+  if(mode()==="loaded")updLoadCard();
   const n=hauls.filter(canEdit).length;
   if(n!==lastEditable){lastEditable=n;render()}
 },1000);
@@ -446,14 +713,30 @@ function render(){
   $("items").innerHTML=list.map(h=>{
     const tgt=h.unloadingName+(h.unloadingDetail?" ("+esc(h.unloadingDetail)+")":"");
     const when=new Date(h.occurredAt).toLocaleString("fi-FI",{day:"numeric",month:"numeric",hour:"2-digit",minute:"2-digit"});
+    const dur=(h.durationMin||h.durationMin===0)?" · ajoaika "+h.durationMin+" min":"";
     return `<div class="row ${h.isVoided?"void":""}">
       <b>${fmt(h.tonnes)} t ${esc(h.gradeName)}</b>${h.ruleOverride?' <span class="warn">⚠</span>':""}
       <small>${esc(h.loadingPlace)} → ${tgt}</small>
-      <small>${esc(h.machineNumber)}, ${when}</small>
+      <small>${esc(h.machineNumber)}, purku ${when}${dur}</small>
       <small class="${h.synced?"ok":"warn"}">${h.synced?"✓ lähetetty":"odottaa lähetystä"}</small>
       ${h.edited?'<small>muokattu</small>':""}
       ${canEdit(h)?`<button class="edit" data-edit="${h.id}">Muokkaa (10 min)</button> `:""}
       <button data-id="${h.id}">${h.isVoided?"Palauta":"Mitätöi"}</button></div>`}).join("");
+  renderWeek();
+}
+// Oma viikkoyhteenveto: näkyy vain kuljettajalle itselleen
+function renderWeek(){
+  const since=Date.now()-7*864e5;
+  const w=mine().filter(h=>!h.isVoided&&Date.parse(h.occurredAt)>=since);
+  if(!w.length){$("myWeek").innerHTML="<h3>Oma viikkoni</h3><div class='note'>Ei kirjauksia viimeisen 7 päivän ajalta.</div>";return}
+  const t=w.reduce((s,h)=>s+h.tonnes,0);
+  const d=w.filter(h=>h.durationMin||h.durationMin===0);
+  const avg=d.length?Math.round(d.reduce((s,h)=>s+h.durationMin,0)/d.length):null;
+  const clean=Math.round(w.filter(h=>!h.ruleOverride).length/w.length*100);
+  $("myWeek").innerHTML=`<h3>Oma viikkoni (vain sinä näet tämän)</h3>
+    <div>${w.length} ajoa · ${fmt(t)} t</div>
+    ${avg!==null?`<div>Keskimääräinen ajoaika ${avg} min</div>`:""}
+    <div>Ilman poikkeamaa: ${clean} %</div>`;
 }
 $("items").onclick=e=>{
   const eid=e.target.dataset&&e.target.dataset.edit;
@@ -466,43 +749,49 @@ $("items").onclick=e=>{
   const h=hauls.find(x=>x.id===id);if(!h)return;
   if(!h.isVoided&&!confirm("Mitätöidäänkö tämä kirjaus?"))return;
   if(editId===id)stopEdit();
-  h.isVoided=!h.isVoided;h.synced=false;persist();render();sync();
+  h.isVoided=!h.isVoided;h.synced=false;persist();render();sync();renderShift();
 };
 
 // ---------- CSV-vienti ----------
+function csvDownload(cols,rows,prefix){
+  const q=v=>'"'+String(v??"").replace(/"/g,'""')+'"';
+  const csv="﻿"+[cols.join(";"),...rows.map(r=>r.map(q).join(";"))].join("\r\n");
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));
+  a.download=prefix+new Date().toISOString().slice(0,10)+".csv";
+  document.body.appendChild(a);a.click();a.remove();
+}
+const CSVCOLS=["id","purkuaika","lastausaika","ajoaika_min","lastauspaikka","purkupaikka","tarkenne","laatu","tonnit","kuljettaja","kone","poikkeus","mitatoity","muokattu","tunnus"];
+function csvRow(h){return[h.id,h.occurredAt,h.loadedAt||"",h.durationMin??"",h.loadingPlace,h.unloadingName,h.unloadingDetail,h.gradeName,
+  String(h.tonnes).replace(".",","),h.driverName,h.machineNumber,h.ruleOverride?"kyllä":"",h.isVoided?"kyllä":"",h.editedAt||"",h.userId||""]}
 $("csv").onclick=()=>{
   const own=mine();
   if(!own.length){toast("Ei vietävää");return}
-  const cols=["id","aika","lastauspaikka","purkupaikka","tarkenne","laatu","tonnit","kuljettaja","kone","poikkeus","mitatoity","muokattu","tunnus"];
-  const q=v=>'"'+String(v??"").replace(/"/g,'""')+'"';
-  const rows=own.map(h=>[h.id,h.occurredAt,h.loadingPlace,h.unloadingName,h.unloadingDetail,h.gradeName,
-    String(h.tonnes).replace(".",","),h.driverName,h.machineNumber,h.ruleOverride?"kyllä":"",h.isVoided?"kyllä":"",h.editedAt||"",h.userId||""].map(q).join(";"));
-  const csv="\ufeff"+[cols.join(";"),...rows].join("\r\n");
-  const a=document.createElement("a");
-  a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));
-  a.download="ajokerrat_"+new Date().toISOString().slice(0,10)+".csv";
-  document.body.appendChild(a);a.click();a.remove();
+  csvDownload(CSVCOLS,own.map(csvRow),"kultajuna_ajot_");
 };
 
 // ---------- Välilehdet ----------
 function tab(name){
-  ["form","list","set"].forEach(n=>{
+  if(name==="admin"&&!isAdmin())name="form";
+  ["form","list","admin","set"].forEach(n=>{
     $("v-"+n).classList.toggle("hide",n!==name);
     $("t-"+n).setAttribute("aria-selected",n===name);
   });
   if(name==="list")render();
-  if(name==="set"){const c=cfg();$("cfgUrl").value=c.url||"";updPlacesInfo();updInfo();$("pwMsg").textContent=""}
+  if(name==="set"){updPlacesInfo();updInfo();$("pwMsg").textContent="";$("cfgMsg").textContent=""}
+  if(name==="admin")admOpen();
   window.scrollTo(0,0);
 }
 $("t-form").onclick=()=>tab("form");
 $("t-list").onclick=()=>tab("list");
+$("t-admin").onclick=()=>tab("admin");
 $("t-set").onclick=()=>tab("set");
 
 // ---------- Synkronointi palvelimelle ----------
-const CFGKEY="kaivos_cfg_v2";
-// Palvelimen osoite on valmiina sovelluksessa. Se ei ole salaisuus: kirjautuminen ja kirjaukset vaativat käyttäjän tunnisteen.
+// Palvelimen osoite on lukittu sovellukseen. Sitä ei voi vaihtaa laitteella; muutos tehdään julkaisemalla uusi sovellusversio.
 const DEFAULT_URL="https://script.google.com/macros/s/AKfycbw3yMl8GjVqYu0Drfu8T8KCCeWlWC6SZNvcZKQESlY12raU__K8NkbNlHRHujAMBj1W/exec";
-const APP_VERSION="6", LASTSYNC="kaivos_lastsync_v1", STALE_MS=12*3600*1000;
+const APP_VERSION="7", LASTSYNC="kaivos_lastsync_v1", STALE_MS=12*3600*1000;
+function cfg(){return{url:DEFAULT_URL}}
 
 // ---------- Varoitus lähettämättömistä kirjauksista ----------
 function updWarn(){
@@ -510,7 +799,7 @@ function updWarn(){
   const bar=$("warnBar");
   if(!old.length){bar.classList.add("hide");return}
   const hrs=Math.floor((Date.now()-Math.min(...old.map(h=>new Date(h.createdAt).getTime())))/3600000);
-  bar.textContent=`⚠ ${old.length} kirjausta ei ole lähetetty yli ${Math.min(hrs,999)} tuntiin. Hae verkko tai vie tiedot Exceliin (napauta tästä).`;
+  bar.textContent=`⚠ ${old.length} kirjausta ei ole lähetetty yli ${Math.min(hrs,999)} tuntiin. Hae verkko tai vie varmuuskopio (napauta tästä).`;
   bar.classList.remove("hide");
 }
 $("warnBar").onclick=()=>tab("list");
@@ -532,16 +821,17 @@ function updInfo(){
   $("cfgInfo").textContent=`Versio ${APP_VERSION} · Viimeisin onnistunut lähetys: ${last} · Tietojen tallennus: ${st}`;
 }
 let syncing=false,lastErr="";
-function cfg(){let o={};try{o=JSON.parse(localStorage.getItem(CFGKEY)||"{}")}catch(e){}return{url:(o&&o.url)||DEFAULT_URL}}
 function updStat(msg){
-  const n=hauls.filter(h=>!h.synced).length,c=cfg();
-  $("stat").textContent=msg||(!c.url?"Palvelinta ei asetettu":n?`${n} odottaa lähetystä${lastErr?" ("+lastErr+")":""}`:"Kaikki lähetetty");
+  const n=hauls.filter(h=>!h.synced).length,off=navigator.onLine===false;
+  const s=$("stat");
+  s.className=off?"off":(n?"":"on");
+  const txt=msg||((off?"Ei verkkoa":"Verkossa")+" · "+(n?`${n} odottaa lähetystä${lastErr?" ("+lastErr+")":""}`:"kaikki lähetetty"));
+  s.innerHTML='<span class="dot"></span>'+esc(txt);
   updWarn();
 }
 // ---------- Palvelinyhteys ----------
 async function api(body,urlOverride){
   const url=urlOverride||cfg().url;
-  if(!url){const e=new Error("Palvelimen osoitetta ei ole asetettu");e.code="nourl";throw e}
   let to;
   const timeout=new Promise((_,rej)=>{to=setTimeout(()=>rej(new Error("ei yhteyttä (aikakatkaisu)")),20000)});
   try{
@@ -561,8 +851,6 @@ async function apiAs(u,body){
   return j;
 }
 async function sync(manual){
-  const c=cfg();
-  if(!c.url){if(manual)toast("Aseta palvelimen osoite");updStat();return}
   if(syncing)return;
   const pending=hauls.filter(h=>!h.synced);
   if(!pending.length){lastErr="";updStat();if(manual)toast("Kaikki on jo lähetetty");return}
@@ -579,7 +867,7 @@ async function sync(manual){
       const list=byUser[u];
       for(let i=0;i<list.length;i+=50){
         try{
-          const j=await apiAs(u,{action:"hauls",hauls:list.slice(i,i+50)});
+          const j=await apiAs(u,{action:"hauls",hauls:list.slice(i,i+50),sentAt:new Date().toISOString()});
           const ack=new Set(j.acked||[]);
           hauls.forEach(h=>{if(ack.has(h.id))h.synced=true});
           persist();
@@ -599,61 +887,222 @@ async function sync(manual){
     else{
       lastErr="";try{localStorage.setItem(LASTSYNC,new Date().toISOString())}catch(e){}
       if(manual)toast("Lähetys onnistui");
+      pullShift();
     }
   }catch(e){
     lastErr=(e.name==="AbortError"||e instanceof TypeError||!e.server)?"ei yhteyttä":e.message;
     if(manual)toast("Lähetys epäonnistui: "+lastErr);
   }finally{syncing=false;updStat();render()}
 }
-$("cfgSave").onclick=()=>{
-  const url=$("cfgUrl").value.trim();
-  if(url&&!/^https:\/\//.test(url)){$("cfgMsg").textContent="Osoitteen täytyy alkaa https://";return}
-  try{localStorage.setItem(CFGKEY,JSON.stringify({url}))}catch(e){}
-  $("cfgMsg").textContent="Asetukset tallennettu.";updStat();sync(true);pullPlaces(true);
-};
 $("cfgTest").onclick=async()=>{
-  const url=$("cfgUrl").value.trim();
-  if(!url){$("cfgMsg").textContent="Syötä osoite ensin.";return}
   $("cfgMsg").textContent="Testataan…";
-  try{await api({action:"ping"},url);$("cfgMsg").textContent="✓ Yhteys palvelimeen toimii."}
-  catch(e){$("cfgMsg").textContent="✗ "+(e.server?e.message:"Ei yhteyttä palvelimeen tai osoite on väärä.")}
+  try{await api({action:"ping"});$("cfgMsg").textContent="✓ Yhteys palvelimeen toimii."}
+  catch(e){$("cfgMsg").textContent="✗ "+(e.server?e.message:"Ei yhteyttä palvelimeen.")}
 };
-$("syncNow").onclick=()=>{sync(true);pullPlaces(true)};
-window.addEventListener("online",()=>pullPlaces());
-document.addEventListener("visibilitychange",()=>{if(!document.hidden)pullPlaces()});
-setInterval(()=>pullPlaces(),10*60*1000);
-
-// ---------- Asetuslinkki (palvelin + salasana yhdellä linkillä) ----------
-function b64enc(s){return btoa(unescape(encodeURIComponent(s))).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"")}
-function b64dec(s){s=s.replace(/-/g,"+").replace(/_/g,"/");while(s.length%4)s+="=";return decodeURIComponent(escape(atob(s)))}
-$("mkLink").onclick=async()=>{
-  const c=cfg();
-  if(!c.url){$("cfgMsg").textContent="Tallenna ensin palvelimen osoite.";return}
-  const link=location.origin+location.pathname+"#asetukset="+b64enc(JSON.stringify({url:c.url}));
-  const box=$("cfgLink");box.value=link;box.classList.remove("hide");box.focus();box.select();
-  try{await navigator.clipboard.writeText(link);$("cfgMsg").textContent="Linkki kopioitu leikepöydälle."}
-  catch(e){$("cfgMsg").textContent="Kopioi linkki yllä olevasta kentästä (paina pitkään → Kopioi)."}
-};
-function importCfgFromHash(){
-  const m=location.hash.match(/^#asetukset=([A-Za-z0-9_-]+)$/);
-  if(!m)return;
-  try{
-    const o=JSON.parse(b64dec(m[1]));
-    if(typeof o.url==="string"&&/^https:\/\//.test(o.url)){
-      let host="";try{host=new URL(o.url).host}catch(e){}
-      // Varmistus: tuntematon linkki voisi muuten ohjata kirjaukset väärälle palvelimelle
-      if(host&&confirm("Otetaanko käyttöön palvelin "+host+"?\n\nVahvista vain, jos sait linkin työnjohtajalta.")){
-        localStorage.setItem(CFGKEY,JSON.stringify({url:o.url}));
-        toast("Asetukset otettu käyttöön");
-      }
-    }
-  }catch(e){}
-  history.replaceState(null,"",location.pathname+location.search); // siivoaa osoiterivin
-}
-window.addEventListener("online",()=>sync());
-document.addEventListener("visibilitychange",()=>{if(!document.hidden)sync()});
+$("syncNow").onclick=()=>{sync(true);pullConfig(true);pullShift(true)};
+window.addEventListener("online",()=>{updStat();pullConfig();sync();pullShift()});
+window.addEventListener("offline",()=>updStat());
+document.addEventListener("visibilitychange",()=>{if(!document.hidden){pullConfig();sync();pullShift();checkSummaryWindow()}});
+setInterval(()=>pullConfig(),10*60*1000);
 setInterval(()=>sync(),60000);
+setInterval(()=>pullShift(),3*60*1000);
 
+// ---------- Vuoro: yhteinen tonnimäärä, kultaharkot ja yhteenveto ----------
+// Päivävuoro 07-19, yövuoro 19-07. Aikaraja haetaan palvelimelta; ilman sitä lasketaan laitteen kellosta.
+function localWin(d){
+  const h=d.getHours(),y=d.getFullYear(),m=d.getMonth(),day=d.getDate();
+  if(h>=SHIFT_DAY&&h<SHIFT_NIGHT)return{start:new Date(y,m,day,SHIFT_DAY).getTime(),end:new Date(y,m,day,SHIFT_NIGHT).getTime(),name:"Päivävuoro"};
+  if(h>=SHIFT_NIGHT)return{start:new Date(y,m,day,SHIFT_NIGHT).getTime(),end:new Date(y,m,day+1,SHIFT_DAY).getTime(),name:"Yövuoro"};
+  return{start:new Date(y,m,day-1,SHIFT_NIGHT).getTime(),end:new Date(y,m,day,SHIFT_DAY).getTime(),name:"Yövuoro"};
+}
+function shiftState(){
+  const s=jget(SHIFTKEY,null),now=Date.now();
+  return(s&&now>=s.start&&now<s.end)?s:null;   // edellisen vuoron lukuja ei näytetä uudelle vuorolle
+}
+function curWin(){const s=shiftState();return s?{start:s.start,end:s.end,name:s.name}:localWin(new Date())}
+function inWin(h,w){const t=Date.parse(h.occurredAt);return t>=w.start&&t<w.end}
+function shiftEstimate(){
+  const s=shiftState(),w=curWin();
+  const live=hauls.filter(h=>!h.isVoided&&inWin(h,w));
+  // palvelimelta haettu summa + laitteen vielä lähettämättömät; ilman palvelinlukua laitteen omat kirjaukset
+  return s?s.tonnes+live.filter(h=>!h.synced).reduce((a,h)=>a+h.tonnes,0):live.reduce((a,h)=>a+h.tonnes,0);
+}
+function harkkoCount(t){return Math.floor(t/limitTn()+1e-9)}
+function barsHtml(n,max){
+  if(n<=0)return "";
+  const k=Math.min(n,max||6);
+  return Array.from({length:k},()=>barSvg()).join("")+(n>k?" ×"+n:"");
+}
+function renderShift(){
+  const bar=$("shiftBar");
+  if(!session){bar.classList.add("hide");return}
+  const s=shiftState(),est=shiftEstimate(),n=harkkoCount(est);
+  $("shiftTxt").innerHTML="Vuoro: "+esc(fmt(Math.round(est*10)/10))+" Tn"+(s?` <small>päivitetty ${hhmm(s.at)}</small>`:" <small>(laitteella)</small>");
+  $("shiftBars").innerHTML=barsHtml(n,6);
+  bar.classList.remove("hide");
+  if(isAdmin())$("admShift").textContent=(s?s.name:curWin().name)+": "+fmt(Math.round(est*10)/10)+" Tn, "+n+" kultaharkkoa (raja "+limitTn()+" Tn)";
+}
+let pullingShift=false;
+async function pullShift(manual){
+  const u=curUser();
+  if(!u||pullingShift)return;
+  if(!manual&&navigator.onLine===false)return;
+  pullingShift=true;
+  try{
+    const j=await apiAs(u,{action:"shiftTotal"});
+    if(j.limit>0){const p=jget(PLACESKEY,{});p.settings=Object.assign(p.settings||{},{harkkoraja:j.limit});jset(PLACESKEY,p)}
+    jset(SHIFTKEY,{start:Date.parse(j.start),end:Date.parse(j.end),tonnes:j.tonnes,name:j.name,at:Date.now()});
+    renderShift();checkHarkko();
+  }catch(e){if(manual)toast("Vuoron tonnien haku epäonnistui: "+(e.server?e.message:"ei yhteyttä"))}
+  finally{pullingShift=false}
+}
+// Kultaharkko aina, kun vuoron tonnit ylittävät täyden rajan. Ensimmäinen havainto vuorossa ei laukaise juhlaa.
+function checkHarkko(){
+  if(!session)return;
+  const w=curWin(),n=harkkoCount(shiftEstimate());
+  const rec=jget(HARKKOKEY,null);
+  if(!rec||rec.start!==w.start){jset(HARKKOKEY,{start:w.start,shown:n});return}
+  if(n>rec.shown){
+    jset(HARKKOKEY,{start:w.start,shown:n});
+    flash({kind:"gold",icon:barSvg(),title:"Kultaharkko!",sub:`Vuoro ylitti ${n*limitTn()} Tn · ${n} harkko${n>1?"a":""}`,buzz:[120,60,120,60,260],ms:3800});
+  }
+}
+setInterval(()=>{renderShift();checkSummaryWindow()},20000);
+
+// Vuoron yhteenveto klo 6.30-7.00 ja 18.30-19.00, jos sovellus on auki ja näkyvissä
+function checkSummaryWindow(){
+  if(!session||document.hidden)return;
+  const d=new Date(),m=d.getHours()*60+d.getMinutes();
+  let tag=null;
+  if(m>=6*60+30&&m<7*60)tag="A";else if(m>=18*60+30&&m<19*60)tag="B";
+  if(!tag)return;
+  const id=d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate()+tag;
+  if(localStorage.getItem(SUMKEY)===id)return;
+  try{localStorage.setItem(SUMKEY,id)}catch(e){}
+  showSummary();
+}
+function showSummary(){
+  const w=curWin(),est=shiftEstimate(),n=harkkoCount(est);
+  $("sumTitle").textContent="Vuoron yhteenveto: "+w.name.toLowerCase();
+  $("sumTonnes").textContent=fmt(Math.round(est*10)/10)+" Tn";
+  $("sumBars").innerHTML=n>0?`<div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center">${barsHtml(n,8)}</div><p style="font-size:20px;font-weight:700">${n} kultaharkko${n>1?"a":""}!</p>`:`<p class="note">Seuraava kultaharkko ${limitTn()} Tn kohdalla.</p>`;
+  const own=mine().filter(h=>!h.isVoided&&inWin(h,w));
+  $("sumOwn").textContent=own.length?`Omat kirjauksesi tässä vuorossa: ${own.length} ajoa`:"";
+  $("sumView").classList.remove("hide");
+  buzz([80,60,80]);
+}
+$("sumClose").onclick=()=>$("sumView").classList.add("hide");
+
+// ---------- Työnjohtajan viesti ja ohje ----------
+let msgDismissed=false;
+function showMsg(){
+  const t=(conf().settings.viesti||"").trim();
+  const on=!!(session&&t&&!msgDismissed);
+  $("msgBox").classList.toggle("hide",!on);
+  if(on)$("msgTxt").textContent=t;
+}
+$("msgClose").onclick=()=>{msgDismissed=true;showMsg()};
+function showHelp(){
+  const t=(conf().settings.tietoteksti||"").trim();
+  $("helpInfo").innerHTML=t?"<h3>Mihin kirjauksia käytetään</h3><p>"+esc(t).replace(/\n/g,"<br>")+"</p>":"";
+  $("help").classList.remove("hide");
+}
+$("helpBtn").onclick=showHelp;$("helpBtn2").onclick=showHelp;
+$("helpClose").onclick=()=>{$("help").classList.add("hide");try{localStorage.setItem(HELPKEY,"1")}catch(e){}};
+$("themeBtn").onclick=()=>{
+  const light=document.documentElement.getAttribute("data-theme")!=="light";
+  document.documentElement.setAttribute("data-theme",light?"light":"dark");
+  try{localStorage.setItem(THEMEKEY,light?"light":"dark")}catch(e){}
+};
+
+// ---------- Pääkäyttäjän hallintanäkymä ----------
+let admList=[];
+function admOpen(){renderShift();if(!admList.length)admLoad()}
+async function admLoad(){
+  const u=curUser();if(!u)return;
+  $("admMsg").textContent="Haetaan…";
+  try{
+    const j=await apiAs(u,{action:"allHauls",days:parseInt($("admDays").value,10)||3});
+    admList=j.hauls||[];
+    $("admMsg").textContent=`${admList.length} kirjausta${j.total>admList.length?" (näytetään uusimmat "+admList.length+"/"+j.total+")":""}`;
+    admRender();
+  }catch(e){
+    $("admMsg").textContent=e.server?(e.code==="forbidden"?"Sinulla ei ole pääkäyttäjän oikeuksia.":e.message):"Ei yhteyttä palvelimeen. Hallinta vaatii verkon.";
+  }
+}
+function admRender(){
+  $("admItems").innerHTML=admList.map(h=>{
+    const when=new Date(h.occurredAt).toLocaleString("fi-FI",{day:"numeric",month:"numeric",hour:"2-digit",minute:"2-digit"});
+    const tgt=h.unloadingName+(h.unloadingDetail?" ("+esc(h.unloadingDetail)+")":"");
+    return `<div class="row ${h.isVoided?"void":""}">
+      <b>${fmt(h.tonnes)} t ${esc(h.gradeName)}</b> <small style="display:inline">${esc(h.driverName)}</small>
+      <small>${esc(h.loadingPlace)} → ${tgt}</small>
+      <small>${esc(h.machineNumber)}, purku ${when}${h.durationMin!==""&&h.durationMin!==undefined?" · ajoaika "+h.durationMin+" min":""}</small>
+      ${h.editedBy?`<small>muokannut ${esc(h.editedBy)}</small>`:""}
+      ${h.clockSkewMin!==""&&h.clockSkewMin!==undefined?`<small class="warn">kello poikkesi ${h.clockSkewMin} min</small>`:""}
+      <button class="edit" data-ae="${esc(h.id)}">Muokkaa</button>
+      <button data-av="${esc(h.id)}">${h.isVoided?"Palauta":"Mitätöi"}</button></div>`}).join("");
+}
+$("admLoad").onclick=admLoad;
+$("admDays").onchange=admLoad;
+$("admCsv").onclick=()=>{
+  if(!admList.length){toast("Ei vietävää");return}
+  csvDownload(CSVCOLS,admList.map(csvRow),"kultajuna_kaikki_");
+};
+let aeId=null;
+function toLocalInput(iso){
+  if(!iso)return"";const d=new Date(iso);if(isNaN(d))return"";
+  const p=n=>String(n).padStart(2,"0");
+  return d.getFullYear()+"-"+p(d.getMonth()+1)+"-"+p(d.getDate())+"T"+p(d.getHours())+":"+p(d.getMinutes());
+}
+function fromLocalInput(v){if(!v)return"";const d=new Date(v);return isNaN(d)?"":d.toISOString()}
+function fillSelect(el,names,cur){
+  const l=names.slice();if(cur&&!l.includes(cur))l.push(cur);
+  el.innerHTML=l.map(n=>`<option value="${esc(n)}">${esc(n)}</option>`).join("");el.value=cur||l[0];
+}
+$("admItems").onclick=async e=>{
+  const ae=e.target.dataset&&e.target.dataset.ae,av=e.target.dataset&&e.target.dataset.av;
+  if(ae){
+    const h=admList.find(x=>x.id===ae);if(!h)return;
+    aeId=ae;
+    $("admEditWho").textContent=h.driverName+" · "+new Date(h.occurredAt).toLocaleString("fi-FI");
+    $("aeLoad").value=h.loadingPlace;$("aeDetail").value=h.unloadingDetail||"";
+    $("aeTonnes").value=String(h.tonnes).replace(".",",");$("aeMachine").value=h.machineNumber;
+    fillSelect($("aeGrade"),conf().grades.map(g=>g.name),h.gradeName);
+    fillSelect($("aeDest"),conf().dests.map(d=>d.name),h.unloadingName);
+    $("aeLoaded").value=toLocalInput(h.loadedAt);$("aeUnloaded").value=toLocalInput(h.occurredAt);
+    $("aeMsg").textContent="";$("admEdit").classList.remove("hide");
+    return;
+  }
+  if(av){
+    const h=admList.find(x=>x.id===av);if(!h)return;
+    if(!h.isVoided&&!confirm("Mitätöidäänkö kirjaus?"))return;
+    await admSave(av,{isVoided:!h.isVoided});
+  }
+};
+$("aeCancel").onclick=()=>$("admEdit").classList.add("hide");
+$("aeSave").onclick=async()=>{
+  const f={
+    loadingPlace:$("aeLoad").value.trim(),gradeName:$("aeGrade").value,unloadingName:$("aeDest").value,
+    unloadingDetail:$("aeDetail").value.trim(),tonnes:$("aeTonnes").value.trim().replace(",","."),
+    machineNumber:$("aeMachine").value.trim().toUpperCase(),
+    loadedAt:fromLocalInput($("aeLoaded").value),occurredAt:fromLocalInput($("aeUnloaded").value)
+  };
+  if(!f.occurredAt){$("aeMsg").textContent="Purkuaika puuttuu.";return}
+  const ok=await admSave(aeId,f,$("aeMsg"));
+  if(ok)$("admEdit").classList.add("hide");
+};
+async function admSave(id,fields,msgEl){
+  try{
+    const j=await apiAs(curUser(),{action:"adminEdit",id,fields});
+    if(j.hauls&&j.hauls[0]){const i=admList.findIndex(x=>x.id===id);if(i>=0)admList[i]=j.hauls[0]}
+    admRender();toast(j.unchanged?"Ei muutoksia":"Muutos tallennettu");return true;
+  }catch(e){
+    const m=e.server?e.message:"Ei yhteyttä palvelimeen.";
+    if(msgEl)msgEl.textContent=m;else toast(m);
+    return false;
+  }
+}
 
 // ---------- Kirjautuminen ----------
 function b64(bytes){let t="";new Uint8Array(bytes).forEach(b=>t+=String.fromCharCode(b));return btoa(t)}
@@ -667,26 +1116,26 @@ async function derive(pw,saltB64){
   return b64(bits);
 }
 function sameStr(a,b){if(a.length!==b.length)return false;let d=0;for(let i=0;i<a.length;i++)d|=a.charCodeAt(i)^b.charCodeAt(i);return d===0}
-function startSession(u,name){session={u,name,at:Date.now()};try{localStorage.setItem(SESSKEY,JSON.stringify(session))}catch(e){}}
+function startSession(u,name,role){session={u,name,role:role||"driver",at:Date.now()};try{localStorage.setItem(SESSKEY,JSON.stringify(session))}catch(e){}}
 function endSession(){session=null;memPassword=null;try{localStorage.removeItem(SESSKEY)}catch(e){}}
 
 let lgFails=0,lgLockUntil=0;
 function lgMsg(t){$("lgMsg").textContent=t||""}
 function showLogin(){
   $("whoBox").classList.add("hide");
-  $("pwForce").classList.add("hide");
+  $("pwForce").classList.add("hide");$("sumView").classList.add("hide");$("help").classList.add("hide");
+  $("shiftBar").classList.add("hide");$("msgBox").classList.add("hide");
   $("login").classList.remove("hide");
-  $("lgUrlBox").classList.add("hide");$("lgUrl").value="";
   $("lgInfo").textContent="Versio "+APP_VERSION+" · palvelin …"+cfg().url.replace(/\/exec$/,"").slice(-6);
   $("lgPass").value="";lgMsg("");
   setTimeout(()=>$("lgUser").focus(),50);
 }
 function resetForm(){
-  if(editId)stopEdit();
+  if(editId)editId=null;
   ["loading","detail","tonnes","machine"].forEach(id=>$(id).value="");
-  sel.dest=null;sel.grade=null;
+  setLoading("");sel.dest=null;sel.grade=null;
   $("detailBox").classList.add("hide");
-  document.querySelectorAll(".err").forEach(e=>{if(e.id.startsWith("e-"))e.textContent=""});
+  document.querySelectorAll(".err").forEach(e=>{if(e.id.startsWith("e-")||e.id==="ruleWarn")e.textContent=""});
 }
 function claimLegacy(){
   const legacy=hauls.filter(h=>!h.userId);
@@ -700,21 +1149,18 @@ function enterApp(){
   $("login").classList.add("hide");lgMsg("");$("pfMsg").textContent="";
   $("who").textContent=session.name;
   $("whoBox").classList.remove("hide");
-  resetForm();claimLegacy();prefill();
-  chips($("dests"),DESTS,"dest",onDest);chips($("grades"),GRADES,"grade");
-  suggestions();render();updStat();tab("form");
-  sync();pullPlaces();
+  $("t-admin").classList.toggle("hide",!isAdmin());
+  msgDismissed=false;
+  resetForm();claimLegacy();
+  renderLoadingEl();restoreForm();
+  suggestions();render();updStat();tab("form");showMsg();renderShift();
+  sync();pullConfig();pullShift();
+  if(!localStorage.getItem(HELPKEY))showHelp();
 }
 async function doLogin(){
   const u=$("lgUser").value.trim().toLowerCase(),pw=$("lgPass").value;
   if(Date.now()<lgLockUntil){lgMsg("Odota hetki ennen uutta yritystä.");return}
   if(!u||!pw){lgMsg("Syötä tunnus ja salasana.");return}
-  const typed=$("lgUrl").value.trim();
-  if(!$("lgUrlBox").classList.contains("hide")&&typed){
-    if(!/^https:\/\//.test(typed)){lgMsg("Palvelimen osoitteen pitää alkaa https://");return}
-    try{localStorage.setItem(CFGKEY,JSON.stringify({url:typed}))}catch(e){}
-    $("lgInfo").textContent="Versio "+APP_VERSION+" · palvelin …"+typed.replace(/\/exec$/,"").slice(-6);
-  }
   $("lgGo").disabled=true;lgMsg("Kirjaudutaan…");
   try{
     const us=users(),prof=us[u];
@@ -729,8 +1175,8 @@ async function doLogin(){
     if(res){
       const salt=newSalt(),ver=await derive(pw,salt);
       const all=users();
-      all[u]=Object.assign(all[u]||{},{name:res.name,salt,ver,token:res.token,disabled:false});
-      saveUsers(all);memPassword=pw;startSession(u,res.name);lgFails=0;
+      all[u]=Object.assign(all[u]||{},{name:res.name,salt,ver,token:res.token,disabled:false,role:res.role||"driver"});
+      saveUsers(all);memPassword=pw;startSession(u,res.name,res.role);lgFails=0;
       enterApp();
       if(res.mustChange)showForce();
       return;
@@ -743,13 +1189,12 @@ async function doLogin(){
       if(lgFails>=5){lgLockUntil=Date.now()+30000;lgFails=0}
       return;
     }
-    memPassword=pw;startSession(u,prof.name);lgFails=0;enterApp();
+    memPassword=pw;startSession(u,prof.name,prof.role);lgFails=0;enterApp();
   }catch(e){lgMsg(e.message||"Kirjautuminen epäonnistui.")}
   finally{$("lgGo").disabled=false;$("lgPass").value=""}
 }
 $("lgGo").onclick=doLogin;
-$("lgChange").onclick=()=>{$("lgUrlBox").classList.toggle("hide");$("lgUrl").focus()};
-["lgUser","lgPass","lgUrl"].forEach(id=>$(id).addEventListener("keydown",e=>{if(e.key==="Enter")doLogin()}));
+["lgUser","lgPass"].forEach(id=>$(id).addEventListener("keydown",e=>{if(e.key==="Enter")doLogin()}));
 
 $("logout").onclick=()=>{
   const n=hauls.filter(h=>!h.synced).length;
@@ -800,9 +1245,9 @@ if("serviceWorker" in navigator&&location.protocol.startsWith("http")){
 }
 
 // ---------- Käynnistys ----------
-importCfgFromHash();
-chips($("dests"),DESTS,"dest",onDest);
-chips($("grades"),GRADES,"grade");
+// Vanha asetuslinkki (#asetukset=...) ei enää vaihda palvelinta: osoite on lukittu sovellukseen
+if(/^#asetukset=/.test(location.hash))history.replaceState(null,"",location.pathname+location.search);
+renderLoadingEl();drawChips();renderRecent();applyMode();
 suggestions();updStat();askPersist().then(updInfo);
 if(session)enterApp();else showLogin();
 </script>

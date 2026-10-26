@@ -1,6 +1,6 @@
 {
-  "name": "Kaivoksen ajot",
-  "short_name": "Ajot",
+  "name": "KultaJuna",
+  "short_name": "KultaJuna",
   "description": "Kivenajomäärien kirjaus, toimii myös ilman verkkoa",
   "lang": "fi",
   "start_url": "./",
