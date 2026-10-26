@@ -161,6 +161,8 @@ input[type=password]{width:100%;font:inherit;font-size:22px;padding:14px;border:
     <button class="save" id="lgGo">Kirjaudu</button>
     <p class="err" id="lgMsg"></p>
     <p class="note">Ensimmäinen kirjautuminen tällä laitteella vaatii verkkoyhteyden. Sen jälkeen kirjautuminen toimii myös ilman verkkoa.</p>
+    <p class="note" id="lgInfo"></p>
+    <button class="linkbtn" id="lgChange" type="button">Vaihda palvelimen osoite</button>
   </div>
 </div>
 
@@ -497,8 +499,10 @@ $("t-list").onclick=()=>tab("list");
 $("t-set").onclick=()=>tab("set");
 
 // ---------- Synkronointi palvelimelle ----------
-const CFGKEY="kaivos_cfg_v1";
-const APP_VERSION="5", LASTSYNC="kaivos_lastsync_v1", STALE_MS=12*3600*1000;
+const CFGKEY="kaivos_cfg_v2";
+// Palvelimen osoite on valmiina sovelluksessa. Se ei ole salaisuus: kirjautuminen ja kirjaukset vaativat käyttäjän tunnisteen.
+const DEFAULT_URL="https://script.google.com/macros/s/AKfycbw3yMl8GjVqYu0Drfu8T8KCCeWlWC6SZNvcZKQESlY12raU__K8NkbNlHRHujAMBj1W/exec";
+const APP_VERSION="6", LASTSYNC="kaivos_lastsync_v1", STALE_MS=12*3600*1000;
 
 // ---------- Varoitus lähettämättömistä kirjauksista ----------
 function updWarn(){
@@ -528,7 +532,7 @@ function updInfo(){
   $("cfgInfo").textContent=`Versio ${APP_VERSION} · Viimeisin onnistunut lähetys: ${last} · Tietojen tallennus: ${st}`;
 }
 let syncing=false,lastErr="";
-function cfg(){try{return JSON.parse(localStorage.getItem(CFGKEY)||"{}")}catch(e){return{}}}
+function cfg(){let o={};try{o=JSON.parse(localStorage.getItem(CFGKEY)||"{}")}catch(e){}return{url:(o&&o.url)||DEFAULT_URL}}
 function updStat(msg){
   const n=hauls.filter(h=>!h.synced).length,c=cfg();
   $("stat").textContent=msg||(!c.url?"Palvelinta ei asetettu":n?`${n} odottaa lähetystä${lastErr?" ("+lastErr+")":""}`:"Kaikki lähetetty");
@@ -672,7 +676,8 @@ function showLogin(){
   $("whoBox").classList.add("hide");
   $("pwForce").classList.add("hide");
   $("login").classList.remove("hide");
-  $("lgUrlBox").classList.toggle("hide",!!cfg().url);
+  $("lgUrlBox").classList.add("hide");$("lgUrl").value="";
+  $("lgInfo").textContent="Versio "+APP_VERSION+" · palvelin …"+cfg().url.replace(/\/exec$/,"").slice(-6);
   $("lgPass").value="";lgMsg("");
   setTimeout(()=>$("lgUser").focus(),50);
 }
@@ -704,10 +709,11 @@ async function doLogin(){
   const u=$("lgUser").value.trim().toLowerCase(),pw=$("lgPass").value;
   if(Date.now()<lgLockUntil){lgMsg("Odota hetki ennen uutta yritystä.");return}
   if(!u||!pw){lgMsg("Syötä tunnus ja salasana.");return}
-  if(!cfg().url){
-    const url=$("lgUrl").value.trim();
-    if(!/^https:\/\//.test(url)){lgMsg("Syötä palvelimen osoite (alkaa https://).");return}
-    try{localStorage.setItem(CFGKEY,JSON.stringify({url}))}catch(e){}
+  const typed=$("lgUrl").value.trim();
+  if(!$("lgUrlBox").classList.contains("hide")&&typed){
+    if(!/^https:\/\//.test(typed)){lgMsg("Palvelimen osoitteen pitää alkaa https://");return}
+    try{localStorage.setItem(CFGKEY,JSON.stringify({url:typed}))}catch(e){}
+    $("lgInfo").textContent="Versio "+APP_VERSION+" · palvelin …"+typed.replace(/\/exec$/,"").slice(-6);
   }
   $("lgGo").disabled=true;lgMsg("Kirjaudutaan…");
   try{
@@ -742,6 +748,7 @@ async function doLogin(){
   finally{$("lgGo").disabled=false;$("lgPass").value=""}
 }
 $("lgGo").onclick=doLogin;
+$("lgChange").onclick=()=>{$("lgUrlBox").classList.toggle("hide");$("lgUrl").focus()};
 ["lgUser","lgPass","lgUrl"].forEach(id=>$(id).addEventListener("keydown",e=>{if(e.key==="Enter")doLogin()}));
 
 $("logout").onclick=()=>{
