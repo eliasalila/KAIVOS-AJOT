@@ -44,13 +44,26 @@ input:focus{outline:3px solid var(--hi);border-color:var(--ink)}
 .note{color:var(--mute);font-size:15px;margin:8px 0}
 .banner{border-color:var(--hi);border-width:2px;margin-top:0}
 .row button.edit{border-color:var(--ink);font-weight:600}
+#warnBar{background:var(--hi);color:#1c1f22;padding:10px 16px;font-size:15px;font-weight:700;cursor:pointer}
+.top{display:flex;align-items:center;justify-content:space-between;padding-right:16px}
+.who{display:flex;gap:8px;align-items:center;font-size:14px;color:#cfd3d6}
+.who button{font:inherit;font-size:14px;padding:6px 10px;border:1px solid #cfd3d6;border-radius:8px;background:none;color:#fff}
+.overlay{position:fixed;inset:0;background:var(--bg);z-index:30;overflow:auto;padding:16px}
+.overlay .box{max-width:420px;margin:6vh auto 0}
+.overlay h2{margin:0 0 4px;font-size:26px}
+input[type=password]{width:100%;font:inherit;font-size:22px;padding:14px;border:2px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink)}
+.linkbtn{background:none;border:0;color:var(--mute);font:inherit;font-size:15px;text-decoration:underline;padding:12px 0}
 .hide{display:none}
 </style>
 </head>
 <body>
 <header>
-  <h1>Kaivoksen ajot</h1>
+  <div class="top">
+    <h1>Kaivoksen ajot</h1>
+    <div id="whoBox" class="who hide"><span id="who"></span><button id="logout" type="button">Kirjaudu ulos</button></div>
+  </div>
   <div id="stat"></div>
+  <div id="warnBar" class="hide" role="alert"></div>
   <nav role="tablist">
     <button role="tab" id="t-form" aria-selected="true">Uusi ajokerta</button>
     <button role="tab" id="t-list" aria-selected="false">Kirjatut</button>
@@ -87,10 +100,6 @@ input:focus{outline:3px solid var(--hi);border-color:var(--ink)}
   <input type="text" id="tonnes" inputmode="decimal" autocomplete="off" placeholder="0">
   <div class="err" id="e-tonnes"></div>
 
-  <label for="driver">Kuljettajan nimi</label>
-  <input type="text" id="driver" list="dl-driver" maxlength="60" autocomplete="off" autocorrect="off">
-  <div class="err" id="e-driver"></div>
-
   <label for="machine">Ajoneuvon konenumero</label>
   <input type="text" id="machine" list="dl-machine" maxlength="20" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false">
   <div class="err" id="e-machine"></div>
@@ -108,8 +117,6 @@ input:focus{outline:3px solid var(--hi);border-color:var(--ink)}
 <section id="v-set" class="hide">
   <label for="cfgUrl">Palvelimen osoite</label>
   <input type="text" id="cfgUrl" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" placeholder="https://script.google.com/macros/s/.../exec">
-  <label for="cfgToken">Salasana (token)</label>
-  <input type="text" id="cfgToken" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false">
   <p class="note">Ajokerrat tallentuvat aina ensin laitteelle ja lähetetään palvelimelle, kun verkko on käytettävissä.</p>
   <button class="save" id="cfgSave">Tallenna asetukset</button>
   <div class="tools" style="margin-top:16px">
@@ -118,19 +125,60 @@ input:focus{outline:3px solid var(--hi);border-color:var(--ink)}
   </div>
   <p class="note" id="cfgMsg"></p>
   <p class="note" id="cfgPlaces"></p>
+  <p class="note" id="cfgInfo"></p>
 
   <div class="lbl">Asetuslinkki muille laitteille</div>
-  <p class="note">Tallenna asetukset ensin tälle laitteelle. Paina sitten alla olevaa nappia, kopioi linkki ja lähetä se muille laitteille. Linkin avaaminen ottaa osoitteen ja salasanan käyttöön.</p>
+  <p class="note">Tallenna asetukset ensin tälle laitteelle. Paina sitten alla olevaa nappia, kopioi linkki ja lähetä se muille laitteille. Linkin avaaminen ottaa palvelimen osoitteen käyttöön. Linkki ei sisällä salasanoja.</p>
   <div class="tools">
     <button id="mkLink">Luo asetuslinkki</button>
   </div>
   <input type="text" id="cfgLink" readonly class="hide" autocomplete="off" spellcheck="false">
-  <p class="note">Linkki sisältää salasanan. Lähetä se vain henkilöille, jotka saavat käyttää sovellusta.</p>
+  <p class="note">Jokainen käyttäjä kirjautuu omalla tunnuksellaan ja salasanallaan.</p>
+
+  <div class="lbl">Vaihda salasana</div>
+  <input type="password" id="pwOld" placeholder="Nykyinen salasana" autocomplete="current-password">
+  <div style="height:10px"></div>
+  <input type="password" id="pwNew" placeholder="Uusi salasana (vähintään 6 merkkiä)" autocomplete="new-password">
+  <div style="height:10px"></div>
+  <input type="password" id="pwNew2" placeholder="Uusi salasana uudelleen" autocomplete="new-password">
+  <div class="tools" style="margin-top:12px"><button id="pwGo">Vaihda salasana</button></div>
+  <p class="note" id="pwMsg"></p>
 </section>
 </main>
 
+<div id="login" class="overlay hide">
+  <div class="box">
+    <h2>Kirjaudu sisään</h2>
+    <p class="note">Kaivoksen ajot</p>
+    <div id="lgUrlBox" class="hide">
+      <label for="lgUrl">Palvelimen osoite (työnjohtajalta)</label>
+      <input type="text" id="lgUrl" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" placeholder="https://script.google.com/macros/s/.../exec">
+    </div>
+    <label for="lgUser">Tunnus</label>
+    <input type="text" id="lgUser" autocomplete="username" autocorrect="off" autocapitalize="none" spellcheck="false">
+    <label for="lgPass">Salasana</label>
+    <input type="password" id="lgPass" autocomplete="current-password">
+    <button class="save" id="lgGo">Kirjaudu</button>
+    <p class="err" id="lgMsg"></p>
+    <p class="note">Ensimmäinen kirjautuminen tällä laitteella vaatii verkkoyhteyden. Sen jälkeen kirjautuminen toimii myös ilman verkkoa.</p>
+  </div>
+</div>
+
+<div id="pwForce" class="overlay hide">
+  <div class="box">
+    <h2>Vaihda salasana</h2>
+    <p class="note">Salasanasi on väliaikainen. Valitse oma salasana ennen jatkamista.</p>
+    <label for="pfNew">Uusi salasana (vähintään 6 merkkiä)</label>
+    <input type="password" id="pfNew" autocomplete="new-password">
+    <label for="pfNew2">Uusi salasana uudelleen</label>
+    <input type="password" id="pfNew2" autocomplete="new-password">
+    <button class="save" id="pfGo">Tallenna salasana</button>
+    <p class="err" id="pfMsg"></p>
+    <button class="linkbtn" id="pfOut" type="button">Kirjaudu ulos</button>
+  </div>
+</div>
+
 <datalist id="dl-loading"></datalist>
-<datalist id="dl-driver"></datalist>
 <datalist id="dl-machine"></datalist>
 <div class="toast" id="toast"></div>
 
@@ -152,6 +200,25 @@ const PLACE_BAD=/[^A-Za-z0-9ÅÄÖåäö]/g, PLACE_OK=/^[A-Za-z0-9ÅÄÖåäö]{
 const $=id=>document.getElementById(id);
 const sel={dest:null,grade:null};
 let hauls=load();
+
+// ---------- Käyttäjät ja istunto ----------
+const USERSKEY="kaivos_users_v1", SESSKEY="kaivos_session_v1", SESS_MS=12*3600*1000, LOCAL_ITER=100000;
+function users(){try{return JSON.parse(localStorage.getItem(USERSKEY)||"{}")}catch(e){return{}}}
+function saveUsers(o){try{localStorage.setItem(USERSKEY,JSON.stringify(o));return true}catch(e){return false}}
+function readSession(){
+  try{
+    const x=JSON.parse(localStorage.getItem(SESSKEY)||"null");
+    const u=x&&users()[x.u];
+    if(x&&u&&!u.disabled&&Date.now()-x.at<SESS_MS)return x;
+  }catch(e){}
+  return null;
+}
+let session=readSession();
+let memPassword=null;   // salasana pysyy vain muistissa, ei tallennu laitteelle
+function curUser(){return session?session.u:null}
+function nameOf(u){const p=users()[u];return p&&p.name||u}
+function mine(){return hauls.filter(h=>h.userId===curUser())}
+function lastOwn(){const m=mine();return m.length?m[m.length-1]:null}
 
 function load(){try{return JSON.parse(localStorage.getItem(KEY)||"[]")}catch(e){return[]}}
 function persist(){
@@ -211,7 +278,8 @@ async function pullPlaces(manual){
   if(!manual&&navigator.onLine===false)return;
   pulling=true;
   try{
-    const j=await post(c,[],{action:"places"});
+    const u=curUser();if(!u)return;
+    const j=await apiAs(u,{action:"places"});
     if(Array.isArray(j.places)){
       localStorage.setItem(PLACESKEY,JSON.stringify({list:j.places,mode:j.mode||"free",at:new Date().toISOString()}));
       suggestions();updPlacesInfo();
@@ -225,12 +293,11 @@ function suggestions(){
   const r=[...hauls].reverse();
   const recent=uniq(r.flatMap(h=>[h.loadingPlace,h.unloadingDetail]).filter(Boolean));
   fillList("dl-loading",uniq([...placesData().list,...recent]));
-  fillList("dl-driver",uniq(r.map(h=>h.driverName)));
   fillList("dl-machine",uniq(r.map(h=>h.machineNumber)));
 }
 function prefill(){
-  const l=hauls[hauls.length-1];if(!l)return;
-  $("loading").value=l.loadingPlace;$("driver").value=l.driverName;$("machine").value=l.machineNumber;
+  const l=lastOwn();if(!l)return;
+  $("loading").value=l.loadingPlace;$("machine").value=l.machineNumber;
   sel.dest=DESTS.find(d=>d.id===l.unloadingId)||null;
   if(sel.dest){onDest(sel.dest);if(sel.dest.type==="backfill")$("detail").value=l.unloadingDetail||""}
   const g=GRADES.find(g=>g.code===l.gradeCode);
@@ -262,13 +329,13 @@ function validate(){
   ok&=setErr("grade",sel.grade?"":"Valitse kiven laatu");
   const t=parseFloat($("tonnes").value.replace(",","."));
   ok&=setErr("tonnes",isNaN(t)?"Syötä määrä numerona":t<=0?"Määrän täytyy olla yli 0":t>500?"Määrä vaikuttaa liian suurelta":"");
-  ok&=setErr("driver",$("driver").value.trim().length<2?"Syötä kuljettajan nimi":"");
   ok&=setErr("machine",$("machine").value?"":"Syötä konenumero");
   return!!ok;
 }
 
 $("save").onclick=()=>{
-  if(!validate()){const e=document.querySelector(".err:not(:empty)");e&&e.scrollIntoView({block:"center",behavior:"smooth"});return}
+  if(!session){showLogin();return}
+  if(!validate()){const e=document.querySelector("#v-form .err:not(:empty)");e&&e.scrollIntoView({block:"center",behavior:"smooth"});return}
   const d=sel.dest,g=sel.grade;
   const allowed=ALLOWED[g.code];
   const override=!!allowed&&!allowed.includes(d.type);
@@ -289,7 +356,7 @@ $("save").onclick=()=>{
     unloadingDetail:dtVal,
     gradeCode:g.code,gradeName:g.name,
     tonnes:parseFloat($("tonnes").value.replace(",",".")),
-    driverName:$("driver").value.trim(),machineNumber:$("machine").value,
+    driverName:session.name,userId:session.u,machineNumber:$("machine").value,
     ruleOverride:override
   };
 
@@ -311,13 +378,14 @@ $("save").onclick=()=>{
   if(!persist()){hauls.pop();return}
   $("tonnes").value="";suggestions();render();
   toast("Ajokerta tallennettu");sync();
+  if(storagePersisted!==true)askPersist().then(updInfo);
   $("tonnes").focus();
 };
 
 // ---------- Muokkaus (10 min kirjauksesta) ----------
 const EDIT_MS=10*60*1000;
 let editId=null;
-function canEdit(h){return !h.isVoided&&Date.now()-new Date(h.createdAt).getTime()<EDIT_MS}
+function canEdit(h){return !h.isVoided&&h.userId===curUser()&&Date.now()-new Date(h.createdAt).getTime()<EDIT_MS}
 function editLeftText(h){
   const left=Math.max(0,EDIT_MS-(Date.now()-new Date(h.createdAt).getTime()));
   const m=Math.floor(left/60000),s=Math.floor(left%60000/1000);
@@ -331,7 +399,6 @@ function startEdit(h){
   $("detail").value=h.unloadingDetail||"";
   sel.grade=GRADES.find(x=>x.code===h.gradeCode)||null;
   $("tonnes").value=String(h.tonnes).replace(".",",");
-  $("driver").value=h.driverName;
   $("machine").value=h.machineNumber;
   chips($("dests"),DESTS,"dest",onDest);chips($("grades"),GRADES,"grade");
   document.querySelectorAll(".err").forEach(e=>e.textContent="");
@@ -345,9 +412,9 @@ function stopEdit(){
   $("editBanner").classList.add("hide");
   $("save").textContent="Tallenna";
   $("tonnes").value="";
-  const l=hauls[hauls.length-1];
-  if(l){ // palautetaan esitäyttö viimeisimmästä kirjauksesta
-    $("loading").value=l.loadingPlace;$("driver").value=l.driverName;$("machine").value=l.machineNumber;
+  const l=lastOwn();
+  if(l){ // palautetaan esitäyttö viimeisimmästä omasta kirjauksesta
+    $("loading").value=l.loadingPlace;$("machine").value=l.machineNumber;
     sel.dest=DESTS.find(d=>d.id===l.unloadingId)||null;
     if(sel.dest)onDest(sel.dest);
     $("detail").value=sel.dest&&sel.dest.type==="backfill"?(l.unloadingDetail||""):"";
@@ -370,16 +437,17 @@ setInterval(()=>{
 
 // ---------- Lista ----------
 function render(){
-  const list=[...hauls].reverse().slice(0,200);
-  const total=hauls.filter(h=>!h.isVoided).reduce((s,h)=>s+h.tonnes,0);
-  $("sum").textContent=hauls.length?`Yhteensä ${fmt(total)} t, ${hauls.length} kirjausta`:"Ei vielä kirjauksia";
+  const own=mine();
+  const list=[...own].reverse().slice(0,200);
+  const total=own.filter(h=>!h.isVoided).reduce((s,h)=>s+h.tonnes,0);
+  $("sum").textContent=own.length?`Omat kirjaukset yhteensä ${fmt(total)} t, ${own.length} kirjausta`:"Ei vielä kirjauksia";
   $("items").innerHTML=list.map(h=>{
     const tgt=h.unloadingName+(h.unloadingDetail?" ("+esc(h.unloadingDetail)+")":"");
     const when=new Date(h.occurredAt).toLocaleString("fi-FI",{day:"numeric",month:"numeric",hour:"2-digit",minute:"2-digit"});
     return `<div class="row ${h.isVoided?"void":""}">
       <b>${fmt(h.tonnes)} t ${esc(h.gradeName)}</b>${h.ruleOverride?' <span class="warn">⚠</span>':""}
       <small>${esc(h.loadingPlace)} → ${tgt}</small>
-      <small>${esc(h.driverName)}, ${esc(h.machineNumber)}, ${when}</small>
+      <small>${esc(h.machineNumber)}, ${when}</small>
       <small class="${h.synced?"ok":"warn"}">${h.synced?"✓ lähetetty":"odottaa lähetystä"}</small>
       ${h.edited?'<small>muokattu</small>':""}
       ${canEdit(h)?`<button class="edit" data-edit="${h.id}">Muokkaa (10 min)</button> `:""}
@@ -401,11 +469,12 @@ $("items").onclick=e=>{
 
 // ---------- CSV-vienti ----------
 $("csv").onclick=()=>{
-  if(!hauls.length){toast("Ei vietävää");return}
-  const cols=["id","aika","lastauspaikka","purkupaikka","tarkenne","laatu","tonnit","kuljettaja","kone","poikkeus","mitatoity","muokattu"];
+  const own=mine();
+  if(!own.length){toast("Ei vietävää");return}
+  const cols=["id","aika","lastauspaikka","purkupaikka","tarkenne","laatu","tonnit","kuljettaja","kone","poikkeus","mitatoity","muokattu","tunnus"];
   const q=v=>'"'+String(v??"").replace(/"/g,'""')+'"';
-  const rows=hauls.map(h=>[h.id,h.occurredAt,h.loadingPlace,h.unloadingName,h.unloadingDetail,h.gradeName,
-    String(h.tonnes).replace(".",","),h.driverName,h.machineNumber,h.ruleOverride?"kyllä":"",h.isVoided?"kyllä":"",h.editedAt||""].map(q).join(";"));
+  const rows=own.map(h=>[h.id,h.occurredAt,h.loadingPlace,h.unloadingName,h.unloadingDetail,h.gradeName,
+    String(h.tonnes).replace(".",","),h.driverName,h.machineNumber,h.ruleOverride?"kyllä":"",h.isVoided?"kyllä":"",h.editedAt||"",h.userId||""].map(q).join(";"));
   const csv="\ufeff"+[cols.join(";"),...rows].join("\r\n");
   const a=document.createElement("a");
   a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));
@@ -420,7 +489,7 @@ function tab(name){
     $("t-"+n).setAttribute("aria-selected",n===name);
   });
   if(name==="list")render();
-  if(name==="set"){const c=cfg();$("cfgUrl").value=c.url||"";$("cfgToken").value=c.token||"";updPlacesInfo()}
+  if(name==="set"){const c=cfg();$("cfgUrl").value=c.url||"";updPlacesInfo();updInfo();$("pwMsg").textContent=""}
   window.scrollTo(0,0);
 }
 $("t-form").onclick=()=>tab("form");
@@ -429,57 +498,121 @@ $("t-set").onclick=()=>tab("set");
 
 // ---------- Synkronointi palvelimelle ----------
 const CFGKEY="kaivos_cfg_v1";
+const APP_VERSION="5", LASTSYNC="kaivos_lastsync_v1", STALE_MS=12*3600*1000;
+
+// ---------- Varoitus lähettämättömistä kirjauksista ----------
+function updWarn(){
+  const old=hauls.filter(h=>!h.synced&&Date.now()-new Date(h.createdAt).getTime()>STALE_MS);
+  const bar=$("warnBar");
+  if(!old.length){bar.classList.add("hide");return}
+  const hrs=Math.floor((Date.now()-Math.min(...old.map(h=>new Date(h.createdAt).getTime())))/3600000);
+  bar.textContent=`⚠ ${old.length} kirjausta ei ole lähetetty yli ${Math.min(hrs,999)} tuntiin. Hae verkko tai vie tiedot Exceliin (napauta tästä).`;
+  bar.classList.remove("hide");
+}
+$("warnBar").onclick=()=>tab("list");
+setInterval(updWarn,60000);
+
+// ---------- Pysyvä tallennus ----------
+let storagePersisted=null;
+async function askPersist(){
+  try{
+    if(navigator.storage&&navigator.storage.persist){
+      storagePersisted=(await navigator.storage.persisted())||(await navigator.storage.persist());
+    }
+  }catch(e){}
+}
+function updInfo(){
+  let last="ei vielä";
+  try{const t=localStorage.getItem(LASTSYNC);if(t)last=new Date(t).toLocaleString("fi-FI",{day:"numeric",month:"numeric",hour:"2-digit",minute:"2-digit"})}catch(e){}
+  const st=storagePersisted===true?"suojattu (selain ei poista tietoja itsestään)":storagePersisted===false?"ei suojattu (selain voi poistaa tiedot, jos tila loppuu)":"ei tiedossa";
+  $("cfgInfo").textContent=`Versio ${APP_VERSION} · Viimeisin onnistunut lähetys: ${last} · Tietojen tallennus: ${st}`;
+}
 let syncing=false,lastErr="";
 function cfg(){try{return JSON.parse(localStorage.getItem(CFGKEY)||"{}")}catch(e){return{}}}
 function updStat(msg){
   const n=hauls.filter(h=>!h.synced).length,c=cfg();
   $("stat").textContent=msg||(!c.url?"Palvelinta ei asetettu":n?`${n} odottaa lähetystä${lastErr?" ("+lastErr+")":""}`:"Kaikki lähetetty");
+  updWarn();
 }
-async function post(c,list,extra){
+// ---------- Palvelinyhteys ----------
+async function api(body,urlOverride){
+  const url=urlOverride||cfg().url;
+  if(!url){const e=new Error("Palvelimen osoitetta ei ole asetettu");e.code="nourl";throw e}
   let to;
   const timeout=new Promise((_,rej)=>{to=setTimeout(()=>rej(new Error("ei yhteyttä (aikakatkaisu)")),20000)});
   try{
     // text/plain pitää pyynnön yksinkertaisena (ei CORS-esikyselyä)
-    const req=fetch(c.url,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},
-      body:JSON.stringify(Object.assign({token:c.token||"",hauls:list},extra||{}))}).then(r=>r.json());
+    const req=fetch(url,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},
+      body:JSON.stringify(body)}).then(r=>r.json());
     const j=await Promise.race([req,timeout]);
-    if(!j.ok)throw new Error(j.error||"palvelinvirhe");
+    if(!j||!j.ok){const e=new Error((j&&j.error)||"palvelinvirhe");e.server=true;e.code=(j&&j.code)||"";throw e}
     return j;
   }finally{clearTimeout(to)}
 }
+// Pyyntö käyttäjän omalla istuntotunnisteella
+async function apiAs(u,body){
+  const prof=users()[u];
+  const j=await api(Object.assign({token:prof&&prof.token},body));
+  if(j.newToken){const us=users();if(us[u]){us[u].token=j.newToken;saveUsers(us)}}
+  return j;
+}
 async function sync(manual){
   const c=cfg();
-  if(!c.url){if(manual)toast("Aseta palvelimen osoite Asetuksissa");updStat();return}
+  if(!c.url){if(manual)toast("Aseta palvelimen osoite");updStat();return}
   if(syncing)return;
   const pending=hauls.filter(h=>!h.synced);
   if(!pending.length){lastErr="";updStat();if(manual)toast("Kaikki on jo lähetetty");return}
   if(!manual&&navigator.onLine===false){updStat();return}
   syncing=true;updStat("Lähetetään…");
+  const errs=[];
   try{
-    for(let i=0;i<pending.length;i+=50){
-      const j=await post(c,pending.slice(i,i+50));
-      const ack=new Set(j.acked||[]);
-      hauls.forEach(h=>{if(ack.has(h.id))h.synced=true});
-      persist();
+    // Jokainen kirjaus lähetetään sen tekijän omalla tunnisteella
+    const byUser={};
+    pending.forEach(h=>{const u=h.userId||"";(byUser[u]=byUser[u]||[]).push(h)});
+    for(const u of Object.keys(byUser)){
+      if(!u){errs.push("kirjauksia ilman käyttäjää");continue}
+      if(!users()[u]){errs.push(nameOf(u)+": käyttäjä ei ole tällä laitteella");continue}
+      const list=byUser[u];
+      for(let i=0;i<list.length;i+=50){
+        try{
+          const j=await apiAs(u,{action:"hauls",hauls:list.slice(i,i+50)});
+          const ack=new Set(j.acked||[]);
+          hauls.forEach(h=>{if(ack.has(h.id))h.synced=true});
+          persist();
+        }catch(e){
+          if(e.server&&e.code==="auth"){errs.push(nameOf(u)+": kirjaudu uudelleen verkossa");break}
+          if(e.server&&e.code==="disabled"){
+            const us=users();if(us[u]){us[u].disabled=true;saveUsers(us)}
+            errs.push(nameOf(u)+": tunnus ei ole käytössä");
+            if(session&&session.u===u){endSession();showLogin()}
+            break;
+          }
+          throw e;
+        }
+      }
     }
-    lastErr="";if(manual)toast("Lähetys onnistui");
+    if(errs.length){lastErr=errs.join("; ");if(manual)toast("Osa kirjauksista odottaa: "+lastErr)}
+    else{
+      lastErr="";try{localStorage.setItem(LASTSYNC,new Date().toISOString())}catch(e){}
+      if(manual)toast("Lähetys onnistui");
+    }
   }catch(e){
-    lastErr=(e.name==="AbortError"||e instanceof TypeError)?"ei yhteyttä":e.message;
+    lastErr=(e.name==="AbortError"||e instanceof TypeError||!e.server)?"ei yhteyttä":e.message;
     if(manual)toast("Lähetys epäonnistui: "+lastErr);
   }finally{syncing=false;updStat();render()}
 }
 $("cfgSave").onclick=()=>{
   const url=$("cfgUrl").value.trim();
   if(url&&!/^https:\/\//.test(url)){$("cfgMsg").textContent="Osoitteen täytyy alkaa https://";return}
-  try{localStorage.setItem(CFGKEY,JSON.stringify({url,token:$("cfgToken").value.trim()}))}catch(e){}
+  try{localStorage.setItem(CFGKEY,JSON.stringify({url}))}catch(e){}
   $("cfgMsg").textContent="Asetukset tallennettu.";updStat();sync(true);pullPlaces(true);
 };
 $("cfgTest").onclick=async()=>{
-  const c={url:$("cfgUrl").value.trim(),token:$("cfgToken").value.trim()};
-  if(!c.url){$("cfgMsg").textContent="Syötä osoite ensin.";return}
+  const url=$("cfgUrl").value.trim();
+  if(!url){$("cfgMsg").textContent="Syötä osoite ensin.";return}
   $("cfgMsg").textContent="Testataan…";
-  try{await post(c,[]);$("cfgMsg").textContent="✓ Yhteys ja salasana toimivat."}
-  catch(e){$("cfgMsg").textContent="✗ "+((e.name==="AbortError"||e instanceof TypeError)?"Ei yhteyttä palvelimeen tai osoite on väärä.":e.message)}
+  try{await api({action:"ping"},url);$("cfgMsg").textContent="✓ Yhteys palvelimeen toimii."}
+  catch(e){$("cfgMsg").textContent="✗ "+(e.server?e.message:"Ei yhteyttä palvelimeen tai osoite on väärä.")}
 };
 $("syncNow").onclick=()=>{sync(true);pullPlaces(true)};
 window.addEventListener("online",()=>pullPlaces());
@@ -491,8 +624,8 @@ function b64enc(s){return btoa(unescape(encodeURIComponent(s))).replace(/\+/g,"-
 function b64dec(s){s=s.replace(/-/g,"+").replace(/_/g,"/");while(s.length%4)s+="=";return decodeURIComponent(escape(atob(s)))}
 $("mkLink").onclick=async()=>{
   const c=cfg();
-  if(!c.url){$("cfgMsg").textContent="Tallenna ensin palvelimen osoite ja salasana.";return}
-  const link=location.origin+location.pathname+"#asetukset="+b64enc(JSON.stringify({url:c.url,token:c.token||""}));
+  if(!c.url){$("cfgMsg").textContent="Tallenna ensin palvelimen osoite.";return}
+  const link=location.origin+location.pathname+"#asetukset="+b64enc(JSON.stringify({url:c.url}));
   const box=$("cfgLink");box.value=link;box.classList.remove("hide");box.focus();box.select();
   try{await navigator.clipboard.writeText(link);$("cfgMsg").textContent="Linkki kopioitu leikepöydälle."}
   catch(e){$("cfgMsg").textContent="Kopioi linkki yllä olevasta kentästä (paina pitkään → Kopioi)."}
@@ -506,17 +639,153 @@ function importCfgFromHash(){
       let host="";try{host=new URL(o.url).host}catch(e){}
       // Varmistus: tuntematon linkki voisi muuten ohjata kirjaukset väärälle palvelimelle
       if(host&&confirm("Otetaanko käyttöön palvelin "+host+"?\n\nVahvista vain, jos sait linkin työnjohtajalta.")){
-        localStorage.setItem(CFGKEY,JSON.stringify({url:o.url,token:String(o.token||"")}));
+        localStorage.setItem(CFGKEY,JSON.stringify({url:o.url}));
         toast("Asetukset otettu käyttöön");
       }
     }
   }catch(e){}
-  history.replaceState(null,"",location.pathname+location.search); // poistaa salasanan osoiteriviltä
+  history.replaceState(null,"",location.pathname+location.search); // siivoaa osoiterivin
 }
 window.addEventListener("online",()=>sync());
 document.addEventListener("visibilitychange",()=>{if(!document.hidden)sync()});
 setInterval(()=>sync(),60000);
 
+
+// ---------- Kirjautuminen ----------
+function b64(bytes){let t="";new Uint8Array(bytes).forEach(b=>t+=String.fromCharCode(b));return btoa(t)}
+function unb64(t){const bin=atob(t),a=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)a[i]=bin.charCodeAt(i);return a}
+function newSalt(){return b64(crypto.getRandomValues(new Uint8Array(16)))}
+// Paikallinen salasanan tarkiste (PBKDF2), jotta kirjautuminen toimii ilman verkkoa
+async function derive(pw,saltB64){
+  if(!(window.crypto&&crypto.subtle))throw new Error("Selain ei tue suojattua kirjautumista (tarvitaan https-osoite)");
+  const key=await crypto.subtle.importKey("raw",new TextEncoder().encode(pw),"PBKDF2",false,["deriveBits"]);
+  const bits=await crypto.subtle.deriveBits({name:"PBKDF2",salt:unb64(saltB64),iterations:LOCAL_ITER,hash:"SHA-256"},key,256);
+  return b64(bits);
+}
+function sameStr(a,b){if(a.length!==b.length)return false;let d=0;for(let i=0;i<a.length;i++)d|=a.charCodeAt(i)^b.charCodeAt(i);return d===0}
+function startSession(u,name){session={u,name,at:Date.now()};try{localStorage.setItem(SESSKEY,JSON.stringify(session))}catch(e){}}
+function endSession(){session=null;memPassword=null;try{localStorage.removeItem(SESSKEY)}catch(e){}}
+
+let lgFails=0,lgLockUntil=0;
+function lgMsg(t){$("lgMsg").textContent=t||""}
+function showLogin(){
+  $("whoBox").classList.add("hide");
+  $("pwForce").classList.add("hide");
+  $("login").classList.remove("hide");
+  $("lgUrlBox").classList.toggle("hide",!!cfg().url);
+  $("lgPass").value="";lgMsg("");
+  setTimeout(()=>$("lgUser").focus(),50);
+}
+function resetForm(){
+  if(editId)stopEdit();
+  ["loading","detail","tonnes","machine"].forEach(id=>$(id).value="");
+  sel.dest=null;sel.grade=null;
+  $("detailBox").classList.add("hide");
+  document.querySelectorAll(".err").forEach(e=>{if(e.id.startsWith("e-"))e.textContent=""});
+}
+function claimLegacy(){
+  const legacy=hauls.filter(h=>!h.userId);
+  if(!legacy.length)return;
+  if(confirm(`Laitteella on ${legacy.length} aiempaa kirjausta, joilla ei ole käyttäjää.\n\nLiitetäänkö ne käyttäjälle ${session.name}?`)){
+    legacy.forEach(h=>{h.userId=session.u;if(!h.synced)h.driverName=session.name});
+    persist();
+  }
+}
+function enterApp(){
+  $("login").classList.add("hide");lgMsg("");$("pfMsg").textContent="";
+  $("who").textContent=session.name;
+  $("whoBox").classList.remove("hide");
+  resetForm();claimLegacy();prefill();
+  chips($("dests"),DESTS,"dest",onDest);chips($("grades"),GRADES,"grade");
+  suggestions();render();updStat();tab("form");
+  sync();pullPlaces();
+}
+async function doLogin(){
+  const u=$("lgUser").value.trim().toLowerCase(),pw=$("lgPass").value;
+  if(Date.now()<lgLockUntil){lgMsg("Odota hetki ennen uutta yritystä.");return}
+  if(!u||!pw){lgMsg("Syötä tunnus ja salasana.");return}
+  if(!cfg().url){
+    const url=$("lgUrl").value.trim();
+    if(!/^https:\/\//.test(url)){lgMsg("Syötä palvelimen osoite (alkaa https://).");return}
+    try{localStorage.setItem(CFGKEY,JSON.stringify({url}))}catch(e){}
+  }
+  $("lgGo").disabled=true;lgMsg("Kirjaudutaan…");
+  try{
+    const us=users(),prof=us[u];
+    let res=null;
+    if(navigator.onLine!==false){
+      try{res=await api({action:"login",user:u,password:pw})}
+      catch(e){
+        if(e.server){lgMsg(e.message);if(e.code==="badlogin")lgFails++;if(lgFails>=5){lgLockUntil=Date.now()+30000;lgFails=0}return}
+        // muu virhe = ei verkkoyhteyttä, kokeillaan paikallista kirjautumista
+      }
+    }
+    if(res){
+      const salt=newSalt(),ver=await derive(pw,salt);
+      const all=users();
+      all[u]=Object.assign(all[u]||{},{name:res.name,salt,ver,token:res.token,disabled:false});
+      saveUsers(all);memPassword=pw;startSession(u,res.name);lgFails=0;
+      enterApp();
+      if(res.mustChange)showForce();
+      return;
+    }
+    if(!prof||!prof.ver){lgMsg("Ensimmäinen kirjautuminen tällä laitteella vaatii verkkoyhteyden.");return}
+    if(prof.disabled){lgMsg("Tunnus ei ole käytössä.");return}
+    const v=await derive(pw,prof.salt);
+    if(!sameStr(v,prof.ver)){
+      lgMsg("Väärä tunnus tai salasana.");lgFails++;
+      if(lgFails>=5){lgLockUntil=Date.now()+30000;lgFails=0}
+      return;
+    }
+    memPassword=pw;startSession(u,prof.name);lgFails=0;enterApp();
+  }catch(e){lgMsg(e.message||"Kirjautuminen epäonnistui.")}
+  finally{$("lgGo").disabled=false;$("lgPass").value=""}
+}
+$("lgGo").onclick=doLogin;
+["lgUser","lgPass","lgUrl"].forEach(id=>$(id).addEventListener("keydown",e=>{if(e.key==="Enter")doLogin()}));
+
+$("logout").onclick=()=>{
+  const n=hauls.filter(h=>!h.synced).length;
+  if(n&&!confirm(n+" kirjausta odottaa lähetystä. Ne lähetetään, kun laitteella on verkko, vaikka kirjaudut ulos.\n\nKirjaudutaanko ulos?"))return;
+  endSession();resetForm();showLogin();
+};
+// Automaattinen uloskirjaus 12 tunnin jälkeen
+setInterval(()=>{
+  if(session&&Date.now()-session.at>=SESS_MS){endSession();resetForm();showLogin();toast("Istunto päättyi, kirjaudu uudelleen")}
+},60000);
+
+// ---------- Salasanan vaihto ----------
+function pwProblem(oldPw,newPw,newPw2){
+  if(newPw.length<6)return "Uuden salasanan pitää olla vähintään 6 merkkiä.";
+  if(newPw!==newPw2)return "Uudet salasanat eivät täsmää.";
+  if(oldPw&&newPw===oldPw)return "Valitse toinen salasana.";
+  if(newPw.toLowerCase()===curUser())return "Salasana ei voi olla sama kuin tunnus.";
+  return "";
+}
+async function changePw(oldPw,newPw){
+  await apiAs(curUser(),{action:"changePassword",oldPassword:oldPw,newPassword:newPw});
+  const salt=newSalt(),ver=await derive(newPw,salt);
+  const us=users();us[curUser()]=Object.assign(us[curUser()],{salt,ver});saveUsers(us);
+  memPassword=newPw;
+}
+$("pwGo").onclick=async()=>{
+  const o=$("pwOld").value,n=$("pwNew").value,n2=$("pwNew2").value,m=$("pwMsg");
+  if(!session){return}
+  const bad=pwProblem(o,n,n2);if(bad){m.textContent=bad;return}
+  if(navigator.onLine===false){m.textContent="Salasanan vaihto vaatii verkkoyhteyden.";return}
+  m.textContent="Vaihdetaan…";
+  try{await changePw(o,n);m.textContent="✓ Salasana vaihdettu.";$("pwOld").value=$("pwNew").value=$("pwNew2").value=""}
+  catch(e){m.textContent="✗ "+(e.server?e.message:"Ei yhteyttä palvelimeen.")}
+};
+function showForce(){$("pfNew").value=$("pfNew2").value="";$("pfMsg").textContent="";$("pwForce").classList.remove("hide")}
+$("pfGo").onclick=async()=>{
+  const n=$("pfNew").value,n2=$("pfNew2").value,m=$("pfMsg");
+  const bad=pwProblem(memPassword,n,n2);if(bad){m.textContent=bad;return}
+  m.textContent="Tallennetaan…";
+  try{await changePw(memPassword,n);$("pwForce").classList.add("hide");toast("Salasana vaihdettu")}
+  catch(e){m.textContent=e.server?e.message:"Ei yhteyttä palvelimeen. Yritä uudelleen, kun verkko on käytettävissä."}
+};
+$("pfOut").onclick=()=>{endSession();resetForm();$("pwForce").classList.add("hide");showLogin()};
 
 // ---------- Offline-välimuisti (service worker) ----------
 if("serviceWorker" in navigator&&location.protocol.startsWith("http")){
@@ -525,10 +794,10 @@ if("serviceWorker" in navigator&&location.protocol.startsWith("http")){
 
 // ---------- Käynnistys ----------
 importCfgFromHash();
-prefill();
 chips($("dests"),DESTS,"dest",onDest);
 chips($("grades"),GRADES,"grade");
-suggestions();render();updStat();sync();pullPlaces();
+suggestions();updStat();askPersist().then(updInfo);
+if(session)enterApp();else showLogin();
 </script>
 </body>
 </html>
